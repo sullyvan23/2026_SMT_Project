@@ -13,7 +13,7 @@
 #'   data subsets wisely before calling `collect()`.
 
 # Include the full file path to the folder that holds the data here!
-data_directory <- "C:/Users/b.fryer/Desktop/Organizer-SMT-Data-Challenge-2026"
+data_directory <- "C:/Users/Sully/Downloads/SMT-Data-Challenge-2026"
 
 # Load Data - DO NOT MODIFY ----
 
