@@ -28,13 +28,15 @@ ball_positions <- arrow::open_csv_dataset(paste0(data_directory,"/ball-positions
                                                  "ball_position_x", "ball_position_y", "ball_position_z"),
                                     hive_style = F, 
                                     unify_schemas = T, 
-                                    na = c("", "NA", "NULL", NA, "\\N"))
+                                    na = c("", "NA", "NULL", NA, "\\N")) %>% 
+  collect()
 
 ball_events <- arrow::open_csv_dataset(paste0(data_directory,"/ball-events"), 
                                        partitioning = c("home_team", "away_team", "year", "day"),  
                                        hive_style = F, 
                                        unify_schemas = T, 
-                                       na = c("", "NA", "NULL", NA, "\\N"))
+                                       na = c("", "NA", "NULL", NA, "\\N")) %>% 
+  collect()
 
 player_positions <- arrow::open_csv_dataset(paste0(data_directory,"/player-positions"), 
                                       partitioning = c("home_team", "away_team", "year", "day"), 
@@ -42,7 +44,8 @@ player_positions <- arrow::open_csv_dataset(paste0(data_directory,"/player-posit
                                                    "player_id", "field_x", "field_y"),
                                       hive_style = F, 
                                       unify_schemas = T, 
-                                      na = c("", "NA", "NULL", NA, "\\N"))
+                                      na = c("", "NA", "NULL", NA, "\\N")) %>% 
+  collect()
 
 lineups <- arrow::open_csv_dataset(paste0(data_directory,"/lineups.csv"), 
                                    hive_style = F, 
@@ -249,3 +252,6 @@ create_play_by_play <- function(game_string_input = "y1_d061_VKA_PHD",
     # Pull the pbp column and make it readable
     pull(pbp) %>% str_flatten_comma() %>% str_to_sentence()
 }
+
+
+save.image("Starter.Rdata")
