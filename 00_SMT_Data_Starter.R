@@ -23,9 +23,7 @@ if(!require("sportyR")) {install.packages("sportyR")}; library(sportyR)
 if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
 
 ball_positions <- arrow::open_csv_dataset(paste0(data_directory,"/ball-positions"), 
-                                    partitioning = c("home_team", "away_team", "year", "day"), 
-                                    col_names = c("game_string", "play_per_game", "timestamp",
-                                                 "ball_position_x", "ball_position_y", "ball_position_z"),
+                                    partitioning = c("home_team", "away_team", "year", "day"),
                                     hive_style = F, 
                                     unify_schemas = T, 
                                     na = c("", "NA", "NULL", NA, "\\N")) %>% 
@@ -40,8 +38,6 @@ ball_events <- arrow::open_csv_dataset(paste0(data_directory,"/ball-events"),
 
 player_positions <- arrow::open_csv_dataset(paste0(data_directory,"/player-positions"), 
                                       partitioning = c("home_team", "away_team", "year", "day"), 
-                                      col_names = c("game_string", "play_per_game", "timestamp",
-                                                   "player_id", "field_x", "field_y"),
                                       hive_style = F, 
                                       unify_schemas = T, 
                                       na = c("", "NA", "NULL", NA, "\\N")) %>% 
