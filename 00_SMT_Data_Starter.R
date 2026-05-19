@@ -28,6 +28,7 @@ ball_positions <- arrow::open_csv_dataset(paste0(data_directory,"/ball-positions
                                     unify_schemas = T, 
                                     na = c("", "NA", "NULL", NA, "\\N")) %>% 
   collect()
+ball_positions <- ball_positions %>% mutate(across(c(play_per_game:ball_position_z), ~ as.numeric(.x)))
 
 ball_events <- arrow::open_csv_dataset(paste0(data_directory,"/ball-events"), 
                                        partitioning = c("home_team", "away_team", "year", "day"),  
@@ -42,6 +43,7 @@ player_positions <- arrow::open_csv_dataset(paste0(data_directory,"/player-posit
                                       unify_schemas = T, 
                                       na = c("", "NA", "NULL", NA, "\\N")) %>% 
   collect()
+player_positions <- player_positions %>% mutate(across(c(play_per_game:field_y), ~ as.numeric(.x)))
 
 lineups <- arrow::open_csv_dataset(paste0(data_directory,"/lineups.csv"), 
                                    hive_style = F, 
