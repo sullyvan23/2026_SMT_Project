@@ -56,17 +56,21 @@ nrow(check)
 ### 4446
 check <- check %>% mutate(play_key = paste0(game_string, play_per_game))
 
-ball_pos_fly_ball_2 <- ball_pos_fly_ball %>% mutate(play_key = paste0(game_string, play_per_game)) %>%
+ball_pos_fly_ball_1.1 <- ball_pos_fly_ball %>% mutate(play_key = paste0(game_string, play_per_game)) %>%
                                              filter(play_key %in% check$play_key)
 
 group <- 0
-ball_pos_fly_ball_2 <- ball_pos_fly_ball_2 %>% group_by(game_string, play_per_game) %>%
+ball_pos_fly_ball_2 <- ball_pos_fly_ball_1.1 %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
                                   message(group/4446)
                                   
                          ball_x_model <- gam(ball_position_x ~ timestamp + timestamp_sqrd, data = pick(everything()) )
                          ball_y_model <- gam(ball_position_y ~ timestamp + timestamp_sqrd, data = pick(everything()) )
                          ball_z_model <- gam(ball_position_z ~ timestamp + timestamp_sqrd, data = pick(everything()) )
+
+                         x_rmse <- RMSE(ball_position_x, predict(ball_x_model), na.rm = TRUE)
+                         y_rmse <- RMSE(ball_position_y, predict(ball_y_model), na.rm = TRUE)
+                         z_rmse <- RMSE(ball_position_z, predict(ball_z_model), na.rm = TRUE)
 
                          ground_dist_function <- function(time) {
                             time2 <- time^2
@@ -101,14 +105,82 @@ ball_pos_fly_ball_2 <- ball_pos_fly_ball_2 %>% group_by(game_string, play_per_ga
                             time_to_ground = ball_hits_ground_time,
                             ground_x = predict(ball_x_model, newdata = ground_times),
                             ground_y = predict(ball_y_model, newdata = ground_times),
-                            ground_z = predict(ball_z_model, newdata = ground_times)
+                            ground_z = predict(ball_z_model, newdata = ground_times),
+                            rmse_x = x_rmse,
+                            rmse_y = y_rmse,
+                            rmse_z = z_rmse,
                           )
                          }
                        )
 
 
+ggplot(ball_pos_fly_ball_1.1 %>% filter(play_key == "y1_d145_ADQ_ANI96"), aes(x = ball_position_x, y = ball_position_y, color = timestamp)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
+
+ggplot(ball_pos_fly_ball_1.1 %>% filter(play_key == "y1_d117_BXH_VAS48"), aes(x = timestamp, y = ball_position_z)) + geom_point()
+
 ### only eliminating 2, watched animations input errors / nat applicable plays so not errors on me
 ball_pos_fly_ball_3 <- ball_pos_fly_ball_2 %>% filter(time_to_ground > 0   &   ground_y < 1000)
+
+####################################################################################################################################
+
+ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.1 %>% group_by(play_key) %>% mutate(time_left = last(timestamp) - timestamp)
+ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% filter(time_left <= 500)
+
+group <- 0
+ball_pos_fly_ball_2.1 <- ball_pos_fly_ball_1.2 %>% group_by(game_string, play_per_game) %>%
+                       summarise({group <<- group + 1
+                                  message(group/4446)
+                                  
+                         ball_x_model <- gam(ball_position_x ~ timestamp + timestamp_sqrd, data = pick(everything()) )
+                         ball_y_model <- gam(ball_position_y ~ timestamp + timestamp_sqrd, data = pick(everything()) )
+                         ball_z_model <- gam(ball_position_z ~ timestamp + timestamp_sqrd, data = pick(everything()) )
+
+                         x_rmse <- RMSE(ball_position_x, predict(ball_x_model), na.rm = TRUE)
+                         y_rmse <- RMSE(ball_position_y, predict(ball_y_model), na.rm = TRUE)
+                         z_rmse <- RMSE(ball_position_z, predict(ball_z_model), na.rm = TRUE)
+
+                         ground_dist_function <- function(time) {
+                            time2 <- time^2
+                            times_dataset <- data.frame(timestamp = time, timestamp_sqrd = time2)
+
+                            ball_x <- predict(ball_x_model, newdata = times_dataset)
+                            ball_y <- predict(ball_y_model, newdata = times_dataset)
+                            ball_z <- predict(ball_z_model, newdata = times_dataset)
+                            dist_from_home <- sqrt(ball_x^2 + ball_y^2)
+                            ground_dataset <- data.frame(home_dist = dist_from_home, ball_position_x = ball_x, ball_position_y = ball_y)
+
+                            ground <- switch( first(home_team),
+                              "ANI" = predict(ground_ANI_model, newdata = ground_dataset),
+                              "ARN" = predict(ground_ARN_model, newdata = ground_dataset),
+                              "PHD" = predict(ground_PHD_model, newdata = ground_dataset),
+                              "VAS" = predict(ground_VAS_model, newdata = ground_dataset),
+                              NA
+                            )
+
+                            return(ball_z - ground)
+                          }
+
+                         ball_hits_ground_time <- tryCatch({uniroot(ground_dist_function, c(1000,9000))$root},
+                                                            error = function(e) {-1})
+
+                         ground_times <- data.frame(
+                            timestamp = ball_hits_ground_time,
+                            timestamp_sqrd = ball_hits_ground_time^2
+                          )
+
+                          tibble(
+                            time_to_ground = ball_hits_ground_time,
+                            ground_x = predict(ball_x_model, newdata = ground_times),
+                            ground_y = predict(ball_y_model, newdata = ground_times),
+                            ground_z = predict(ball_z_model, newdata = ground_times),
+                            rmse_x = x_rmse,
+                            rmse_y = y_rmse,
+                            rmse_z = z_rmse,
+                          )
+                         }
+                       )
+
 
 ####################################################################################################################################
 
