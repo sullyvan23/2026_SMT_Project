@@ -125,7 +125,9 @@ ball_pos_fly_ball_3 <- ball_pos_fly_ball_2 %>% filter(time_to_ground > 0   &   g
 ####################################################################################################################################
 
 ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.1 %>% group_by(play_key) %>% mutate(time_left = last(timestamp) - timestamp)
-ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% filter(time_left <= 500)
+ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% mutate(x_speed = 0.68181818 * (ball_position_x - lag(ball_position_x)) / ((timestamp - lag(timestamp))/100),
+                                                          y_speed = 0.68181818 * (ball_position_y - lag(ball_position_y)) / ((timestamp - lag(timestamp))/100),
+                                                          z_speed = 0.68181818 * (ball_position_z - lag(ball_position_z)) / ((timestamp - lag(timestamp))/100))
 
 group <- 0
 ball_pos_fly_ball_2.1 <- ball_pos_fly_ball_1.2 %>% group_by(game_string, play_per_game) %>%
@@ -181,6 +183,15 @@ ball_pos_fly_ball_2.1 <- ball_pos_fly_ball_1.2 %>% group_by(game_string, play_pe
                          }
                        )
 
+
+####################################################################################################################################
+
+ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% mutate(x_speed = 0.68181818 * (ball_position_x - lag(ball_position_x)) / ((timestamp - lag(timestamp))/100),
+                                                          y_speed = 0.68181818 * (ball_position_y - lag(ball_position_y)) / ((timestamp - lag(timestamp))/100),
+                                                          z_speed = 0.68181818 * (ball_position_z - lag(ball_position_z)) / ((timestamp - lag(timestamp))/100))
+ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% mutate(position_angle = atan(ball_position_x/ball_position_y),
+                                                          speed_angle = atan(x_speed/y_speed),
+                                                          angle_diff = position_angle - speed_angle)
 
 ####################################################################################################################################
 
