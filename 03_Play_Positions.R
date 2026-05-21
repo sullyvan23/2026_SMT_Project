@@ -56,25 +56,40 @@ nrow(check)
 ### 4424
 check <- check %>% mutate(play_key = paste0(game_string, play_per_game))
 
-ball_pos_fly_ball_1.1 <- ball_pos_fly_ball %>% mutate(play_key = paste0(game_string, play_per_game)) %>%
-                                             filter(play_key %in% check$play_key)
+ball_pos_fly_ball_1.1 <- ball_pos_fly_ball %>% mutate(play_key = paste0(game_string, play_per_game), home_dist = sqrt(ball_position_x^2 + ball_position_y^2)) %>%
+                                               filter(play_key %in% check$play_key)
 
 ####################################################################################################################################
 
 ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.1 %>% mutate(x_speed = 0.68181818 * (ball_position_x - lag(ball_position_x)) / ((timestamp - lag(timestamp))/1000),
                                                           y_speed = 0.68181818 * (ball_position_y - lag(ball_position_y)) / ((timestamp - lag(timestamp))/1000),
                                                           z_speed = 0.68181818 * (ball_position_z - lag(ball_position_z)) / ((timestamp - lag(timestamp))/1000),
-                                                          speed = sqrt(x_speed^2 + y_speed+2 + z_speed^2))
+                                                          xy_speed = 0.68181818 * (home_dist - lag(home_dist)) / ((timestamp - lag(timestamp))/1000),
+                                                          speed = sqrt(x_speed^2 + y_speed^2 + z_speed^2),
+                                                          xy_accel = (xy_speed - lag(xy_speed)) / ((timestamp - lag(timestamp))/1000))
 ball_pos_fly_ball_1.2 <- ball_pos_fly_ball_1.2 %>% mutate(position_angle = atan(ball_position_x/ball_position_y),
                                                           speed_angle = atan(x_speed/y_speed),
                                                           angle_diff = position_angle - speed_angle)
+
+ball_pos_fly_ball_1.3 <- ball_pos_fly_ball_1.2 %>% slice(-c(1:3))
+
+ball_pos_fly_ball_1.4 <- ball_pos_fly_ball_1.3 %>% summarise(y_accel_sd = sd(y_accel),  max_angle_diff = max(angle_diff), max_abs_x = max(abs(ball_position_x)))
+
+plot(ball_pos_fly_ball_1.4$y_accel_sd)
+
+ball_pos_fly_ball_1.1 <- ball_pos_fly_ball_1.1 %>% mutate(play_key = paste0(game_string, play_per_game))
+
+ggplot(ball_pos_fly_ball_1.1 %>% filter(play_key == "y1_d061_VKA_PHD28"), aes(x = ball_position_x, y = ball_position_y, color = ball_position_z)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white") + xlim(-300, 300) + ylim(-10, 450)
+
+ggplot(ball_pos_fly_ball_1.1 %>% filter(play_key == "y1_d061_VKA_PHD28"), aes(x = timestamp, y = ball_position_y)) + geom_point()
 
 ####################################################################################################################################
 
 group <- 0
 ball_pos_fly_ball_2 <- ball_pos_fly_ball_1.1 %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
-                                  message(group/4446)
+                                  message(group/4424)
                                   
                          ball_x_model <- gam(ball_position_x ~ timestamp + timestamp_sqrd, data = pick(everything()) )
                          ball_y_model <- gam(ball_position_y ~ timestamp + timestamp_sqrd, data = pick(everything()) )
@@ -136,8 +151,17 @@ ball_pos_fly_ball_3 <- ball_pos_fly_ball_2 %>% filter(time_to_ground > 0   &   g
 
 ####################################################################################################################################
 
+ball_pos_fly_ball_tl <- ball_pos_fly_ball_1.2 %>% mutate(time_left = last(timestamp) - timestamp) %>% 
+                                                  filter(time_left >= 50   &   time_left <= 550)
+check <- ball_pos_fly_ball_tl %>% summarise(min_xy_speed = min(xy_speed))
+hist(check$min_xy_speed, breaks = 50)
+ggplot(ball_pos_fly_ball_1.1 %>% filter(play_key == "y1_d117_BXH_VAS48"), aes(x = home_dist, y = ball_position_z)) + geom_point()
+
+
+ball_pos_fly_ball_tl <- ball_pos_fly_ball_tl %>% filter(sum(xy_speed < -10   |   xy_speed > 100) == 0)
+
 group <- 0
-ball_pos_fly_ball_2.1 <- ball_pos_fly_ball_1.2 %>% group_by(game_string, play_per_game) %>%
+ball_pos_fly_ball_2.1 <- ball_pos_fly_ball_tl %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
                                   message(group/4446)
                                   
