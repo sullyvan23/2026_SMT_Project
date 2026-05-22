@@ -11,7 +11,7 @@ ball_pos_fly_ball_2 <- ball_pos_fly_ball_tl %>% group_by(play_key) %>%
                          y_rmse <- RMSE(ball_position_y, predict(ball_y_model), na.rm = TRUE)
                          z_rmse <- RMSE(ball_position_z, predict(ball_z_model), na.rm = TRUE)
 
-                         ground_dist_function <- function(time) {
+                         ground_wall_dist_function <- function(time) {
                             time2 <- time^2
                             times_dataset <- data.frame(timestamp = time, timestamp_sqrd = time2)
 
@@ -19,32 +19,43 @@ ball_pos_fly_ball_2 <- ball_pos_fly_ball_tl %>% group_by(play_key) %>%
                             ball_y <- predict(ball_y_model, newdata = times_dataset)
                             ball_z <- predict(ball_z_model, newdata = times_dataset)
                             dist_from_home <- sqrt(ball_x^2 + ball_y^2)
+                            angle_spray = atan(ball_x / ball_y)
+                           
                             ground_dataset <- data.frame(home_dist = dist_from_home, ball_position_x = ball_x, ball_position_y = ball_y)
+                            wall_dataset <- data.frame(spray_angle = angle_spray)
 
-                            ground <- switch( first(home_team),
-                              "ANI" = predict(ground_ANI_model, newdata = ground_dataset),
-                              "ARN" = predict(ground_ARN_model, newdata = ground_dataset),
-                              "PHD" = predict(ground_PHD_model, newdata = ground_dataset),
-                              "VAS" = predict(ground_VAS_model, newdata = ground_dataset),
+                            distances <- switch( first(home_team),
+                              "ANI" = list("ground" = predict(ground_ANI_model, newdata = ground_dataset), 
+                                           "wall" = predict(wall_ANI_model, newdata = wall_dataset)),
+                              "ARN" = list("ground" = predict(ground_ARN_model, newdata = ground_dataset), 
+                                           "wall" = predict(wall_ARN_model, newdata = wall_dataset)),
+                              "PHD" = list("ground" = predict(ground_PHD_model, newdata = ground_dataset), 
+                                           "wall" = predict(wall_PHD_model, newdata = wall_dataset)),
+                              "VAS" = list("ground" = predict(ground_VAS_model, newdata = ground_dataset), 
+                                           "wall" = predict(wall_VAS_model, newdata = wall_dataset)),
                               NA
                             )
 
-                            return(ball_z - ground)
+                             ground_dist = ball_z - distances$ground
+                             wall_dist = distances$wall - dist_from_home 
+                             min_dist = min(c(ground_dist, wall_dist), na.rm = TRUE)
+
+                            return(min_dist)
                           }
 
-                         ball_hits_ground_time <- tryCatch({uniroot(ground_dist_function, c(1000,9000))$root},
+                         ball_uncatchable_time <- tryCatch({uniroot(ground_wall_dist_function, c(1000,10000))$root},
                                                             error = function(e) {-1})
 
-                         ground_times <- data.frame(
-                            timestamp = ball_hits_ground_time,
-                            timestamp_sqrd = ball_hits_ground_time^2
+                         uncatchable_times <- data.frame(
+                            timestamp = ball_uncatchable_time,
+                            timestamp_sqrd = ball_uncatchable_time^2
                           )
 
                           tibble(
-                            time_to_ground = ball_hits_ground_time,
-                            ground_x = predict(ball_x_model, newdata = ground_times),
-                            ground_y = predict(ball_y_model, newdata = ground_times),
-                            ground_z = predict(ball_z_model, newdata = ground_times),
+                            time_catchable = ball_uncatchable_time,
+                            ground_x = predict(ball_x_model, newdata = uncatchable_times),
+                            ground_y = predict(ball_y_model, newdata = uncatchable_times),
+                            ground_z = predict(ball_z_model, newdata = uncatchable_times),
                             rmse_x = x_rmse,
                             rmse_y = y_rmse,
                             rmse_z = z_rmse
