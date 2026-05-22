@@ -174,7 +174,7 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(wall_ball_dist = case_when(
                                                     home_team == "ANI" ~ ANI_wall,
                                                     home_team == "ARN" ~ ARN_wall,
                                                     home_team == "PHD" ~ PHD_wall,
-                                                    home_team == "VAS" ~ VAS_wall)) %>% select(-c(ANI_wall, ARN_wall, PHD_wall, VAS_wall))
+                                                    home_team == "VAS" ~ VAS_wall)) %>% dplyr::select(-c(ANI_wall, ARN_wall, PHD_wall, VAS_wall))
 
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(caught = ifelse(player_id_down == player_id  &  ball_eventcode_down == 2, 1, 0)) %>%
                                              rename(ground_spray_angle = spray_angle)
@@ -198,6 +198,8 @@ all_fly_ball_stats <- all_fly_ball_stats %>% left_join(ball_pos_fly_ball_1.4[,1:
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(time_to_ground = time_to_ground / 1000,
                                                     OF_need_x_velo = 0.681818 * (OF_x_ball_dist / time_to_ground),
                                                     OF_need_y_velo = 0.681818 * (OF_y_ball_dist / time_to_ground),
+                                                    OF_abs_need_x_velo = abs(OF_need_x_velo),
+                                                    OF_abs_need_y_velo = abs(OF_need_y_velo),
                                                     OF_need_velo = 0.681818 * (OF_ball_dist / time_to_ground)) %>%
                                              relocate(OF_need_x_velo:OF_need_velo, .after = OF_ball_dist)
 
