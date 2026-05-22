@@ -160,10 +160,9 @@ all_pos_fly_balls <- fly_balls[,c(7,3:4)] %>% left_join(ball_pos_fly_ball_2.1[,1
 all_pos_fly_balls <- all_pos_fly_balls %>% left_join(OF_pos_fly_ball[,c(13,4:7)], by = "play_key")
 
 all_fly_ball_stats <- all_pos_fly_balls %>% mutate(hit_dist = sqrt(ground_x^2 + ground_y^2),
-                                                   OF_x_ball_dist = field_x - ground_x,
-                                                   OF_y_ball_dist = field_y - ground_y,
+                                                   OF_x_ball_dist = ground_x - field_x,
+                                                   OF_y_ball_dist = ground_y - field_y,
                                                    OF_ball_dist = sqrt(OF_x_ball_dist^2 + OF_y_ball_dist^2),
-                                                   OF_ball_angle = atan(OF_x_ball_dist / OF_y_ball_dist),
                                                    spray_angle = atan(ground_x/ground_y)) %>% ungroup()
 
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(ANI_wall = predict(wall_ANI_model, newdata = all_fly_ball_stats) - hit_dist,
@@ -195,16 +194,20 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(tail = ground_spray_angle - 
 
 all_fly_ball_stats <- all_fly_ball_stats %>% left_join(ball_pos_fly_ball_1.4[,1:6], by = "play_key")
 
-all_fly_ball_stats <- all_fly_ball_stats %>% mutate(time_to_ground = time_to_ground / 1000,
-                                                    OF_need_x_velo = 0.681818 * (OF_x_ball_dist / time_to_ground),
-                                                    OF_need_y_velo = 0.681818 * (OF_y_ball_dist / time_to_ground),
-                                                    OF_abs_need_x_velo = abs(OF_need_x_velo),
-                                                    OF_abs_need_y_velo = abs(OF_need_y_velo),
-                                                    OF_need_velo = 0.681818 * (OF_ball_dist / time_to_ground)) %>%
-                                             relocate(OF_need_x_velo:OF_need_velo, .after = OF_ball_dist)
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(time_to_ground = time_to_ground / 1000)
 
+####################################################################################################################################
 
-all_fly_ball_stats <- all_fly_ball_stats %>% relocate(caught, .after = min_xy_speed)
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_front_dist = -((OF_x_ball_dist * field_x) + (OF_y_ball_dist * field_y)) / 
+                                                                          sqrt(field_x^2 + field_y^2))
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_angle = acos(-OF_ball_front_dist / OF_ball_dist))
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_side_dist = OF_ball_dist * sin(OF_ball_angle)) %>% relocate(OF_ball_side_dist, .before = OF_ball_angle)
+
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_need_front_velo = 0.681818 * (OF_ball_front_dist / time_to_ground),
+                                                    OF_need_side_velo = 0.681818 * (OF_ball_side_dist / time_to_ground),
+                                                    OF_abs_need_front_velo = abs(OF_need_front_velo),
+                                                    OF_abs_need_side_velo = abs(OF_need_side_velo),
+                                                    OF_need_velo = 0.681818 * (OF_ball_dist / time_to_ground))
 
 
 
