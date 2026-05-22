@@ -198,10 +198,23 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(time_to_ground = time_to_gro
 
 ####################################################################################################################################
 
+all_fly_ball_stats <- all_fly_ball_stats %>% filter(!is.na(player_id))
+
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_front_dist = -((OF_x_ball_dist * field_x) + (OF_y_ball_dist * field_y)) / 
                                                                           sqrt(field_x^2 + field_y^2))
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_angle = acos(-OF_ball_front_dist / OF_ball_dist))
-all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_side_dist = OF_ball_dist * sin(OF_ball_angle)) %>% relocate(OF_ball_side_dist, .before = OF_ball_angle)
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(unit_x = field_x / sqrt(field_x^2 + field_y^2),
+                                                    unit_y = field_y / sqrt(field_x^2 + field_y^2),
+                                                    OF_ball_side_dist = OF_ball_dist * sin(OF_ball_angle),
+                                                    pos_side_diff = abs( (field_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * unit_y)) - ground_x ),
+                                                    neg_side_diff = abs( (field_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * -unit_y)) - ground_x ),
+                                                    OF_ball_side_dist = ifelse(pos_side_diff < neg_side_diff,
+                                                                               OF_ball_side_dist, -OF_ball_side_dist)) %>% 
+                                             dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
+                                             relocate(OF_ball_side_dist, .before = OF_ball_angle)
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_angle = atan(OF_ball_side_dist / -OF_ball_front_dist)) %>% 
+                                             relocate(OF_ball_angle, .after = OF_ball_side_dist)
+
 
 all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_need_front_velo = 0.681818 * (OF_ball_front_dist / time_to_ground),
                                                     OF_need_side_velo = 0.681818 * (OF_ball_side_dist / time_to_ground),
