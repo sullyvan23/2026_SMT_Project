@@ -2,6 +2,9 @@ library(mgcv)
 library(Metrics)
 
 catch_prob_fbs <- all_fly_ball_stats %>% filter(player_id_down == 255   |   player_id == player_id_down)
+catch_prob_fbs <- catch_prob_fbs %>% filter(!is.na(player_id))
+
+catch_correlations <- round(cor(catch_prob_fbs[,c(4:10,12:39)] , catch_prob_fbs$caught), 3)
 
 plot(catch_prob_fbs$OF_need_velo, catch_prob_fbs$caught)
 
