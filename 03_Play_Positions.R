@@ -156,7 +156,7 @@ OF_pos_fly_ball <- OF_pos_fly_ball %>% mutate(play_key = paste0(game_string, pla
 
 fly_balls <- fly_balls %>% mutate(play_key = paste0(game_string, play_per_game))
 
-all_pos_fly_balls <- fly_balls[,c(7,3:4)] %>% left_join(ball_pos_fly_ball_2.1[,1:5], by = "play_key") %>% filter(!is.na(time_to_ground))
+all_pos_fly_balls <- fly_balls[,c(7,3:4)] %>% left_join(ball_pos_fly_ball_2.1, by = "play_key") %>% filter(!is.na(time_to_ground))
 all_pos_fly_balls <- all_pos_fly_balls %>% left_join(OF_pos_fly_ball[,c(13,4:7)], by = "play_key")
 
 all_fly_ball_stats <- all_pos_fly_balls %>% mutate(hit_dist = sqrt(ground_x^2 + ground_y^2),
