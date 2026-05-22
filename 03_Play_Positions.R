@@ -195,6 +195,12 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(tail = ground_spray_angle - 
 
 all_fly_ball_stats <- all_fly_ball_stats %>% left_join(ball_pos_fly_ball_1.4[,1:6], by = "play_key")
 
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(time_to_ground = time_to_ground / 1000,
+                                                    OF_need_x_velo = 0.681818 * (OF_x_ball_dist / time_to_ground),
+                                                    OF_need_y_velo = 0.681818 * (OF_y_ball_dist / time_to_ground),
+                                                    OF_need_velo = 0.681818 * (OF_ball_dist / time_to_ground)) %>%
+                                             relocate(OF_need_x_velo:OF_need_velo, .after = OF_ball_dist)
+
 
 all_fly_ball_stats <- all_fly_ball_stats %>% relocate(caught, .after = min_xy_speed)
 
