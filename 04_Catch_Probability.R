@@ -20,16 +20,22 @@ pred <- c()
 for(fold in catch_prob_folds) {
   train <- catch_prob_fbs[-fold, ]
   test <- catch_prob_fbs[fold, ]
-  model <- gam(caught ~ s(OF_abs_need_front_velo, k = 3) + s(OF_abs_need_side_velo, k = 3), family = binomial, data = train)
+  model <- gam(caught ~ s(OF_need_front_accel, k = 4) + s(OF_need_side_accel, k = 4), family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.2193935
+### 0.2059814
 
 plot(model, page=1)
 plot(pred, act)
 
 
-model <- gam(caught ~ s(OF_abs_need_front_velo, k = 3) + s(OF_abs_need_side_velo, k = 3), family = binomial, data = train)
+model <- gam(caught ~ s(OF_need_accel, k = 3), family = binomial, data = train)
+### 0.2266662
+model <- gam(caught ~ s(OF_abs_need_front_accel, k = 6) + s(OF_abs_need_side_accel, k = 6), family = binomial, data = train)
+### 0.2197144
+
+
+
 
