@@ -212,7 +212,7 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(unit_x = field_x / sqrt(fiel
                                                                                OF_ball_side_dist, -OF_ball_side_dist)) %>% 
                                              dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
                                              relocate(OF_ball_side_dist, .before = OF_ball_angle)
-all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_angle = atan(OF_ball_side_dist / -OF_ball_front_dist)) %>% 
+all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_ball_angle = atan2(OF_ball_side_dist, OF_ball_front_dist)) %>% 
                                              relocate(OF_ball_angle, .after = OF_ball_side_dist)
 
 
