@@ -103,7 +103,7 @@ animate_play <- function(game_string_input = "y1_d061_VKA_PHD",
     mutate(type = "ball", 
            player_id = NA) %>% 
     ## Reorder and Rename Columns
-    select(game_string:timestamp, player_id, type, position_x = ball_position_x,
+    dplyr::select(game_string:timestamp, player_id, type, position_x = ball_position_x,
            position_y = ball_position_y, position_z = ball_position_z, everything())
   
   # Get the Player Tracking Data
@@ -123,7 +123,7 @@ animate_play <- function(game_string_input = "y1_d061_VKA_PHD",
            position_z = NA
     ) %>%
     ## Reorder and Rename Columns
-    select(game_string:timestamp, player_id, type, position_x = field_x,
+    dplyr::select(game_string:timestamp, player_id, type, position_x = field_x,
            position_y = field_y, position_z, everything())
   
   # Combine all tracking data into 1 data frame
@@ -237,8 +237,8 @@ create_play_by_play <- function(game_string_input = "y1_d061_VKA_PHD",
     ## Filter to proper game and play
     filter(game_string == game_string_input &
              play_per_game_input == play_per_game) %>%
-    ## Select Necessary Columns
-    select(ball_eventcode, player_id) %>%
+    ## dplyr::select Necessary Columns
+    dplyr::select(ball_eventcode, player_id) %>%
     ## Collect from Arrow
     collect() %>% 
     # Convert to text
