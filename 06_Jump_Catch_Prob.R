@@ -11,7 +11,7 @@ pred <- c()
 for(fold in jump_folds) {
   train <- jump_catch_prob[-fold, ]
   test <- jump_catch_prob[fold, ]
-  model <- gam(caught ~ s(OF_ball_dist, k = 3) + velo_ball + s(velo_side, k = 4) + s(time_to_ground, k = 3) + s(pred_y_velo, k = 3) +
+  model <- gam(caught ~ s(OF_ball_dist, k = 3) + OF_ball_front_dist + velo_ball + s(velo_side, k = 4) + s(time_to_ground, k = 3) + 
                s(wall_ball_dist, k = 7), 
                family = binomial, data = train)
   act <- c(act, test$caught)
