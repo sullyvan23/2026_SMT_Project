@@ -143,7 +143,8 @@ jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = OF_ball_x_dist / OF_ball_
                                                                     accel_side, -accel_side)) %>% 
                                        dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
                                        relocate(accel_side, .before = accel_on_angle)
-jump_catch_prob <- jump_catch_prob %>% mutate(accel_on_angle = atan2(accel_side, accel_ball))
+jump_catch_prob <- jump_catch_prob %>% mutate(accel_side = ifelse(is.na(accel_side), 0, accel_side),
+                                              accel_on_angle = atan2(accel_side, accel_ball))
 
 
 jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_front_dist = ((OF_ball_x_dist * pred_x_velo) + (OF_ball_y_dist * pred_y_velo)) / 
