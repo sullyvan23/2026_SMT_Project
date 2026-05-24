@@ -92,16 +92,20 @@ jump_catch_prob <- jump_catch_prob %>% mutate(jump_x = pred_x - field_x,
                                               jump_dist = sqrt(jump_x^2 + jump_y^2))
 jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_x_dist = ground_x - pred_x,
                                               OF_ball_y_dist = ground_y - pred_y,
-                                              OF_ball_dist = sqrt(OF_ball_x_dist^2 + OF_ball_y_dist^2))
+                                              OF_ball_dist = sqrt(OF_ball_x_dist^2 + OF_ball_y_dist^2),
+                                              field_ball_x_dist = ground_x - field_x,
+                                              field_ball_y_dist = ground_y - field_y,
+                                              field_ball_dist = sqrt(field_ball_x_dist^2 + field_ball_y_dist^2)) %>%
+                                        relocate(field_ball_x_dist:field_ball_dist, .after = field_y)
 
 ggplot(OF_catchable_positions %>% filter(play_key == "y1_d164_FNQ_PHD92"), aes(x = field_x, y = field_y)) + geom_point()
 
 
-jump_catch_prob <- jump_catch_prob %>% mutate(jump_to_ball = ((jump_x * OF_ball_x_dist) + (jump_y * OF_ball_y_dist)) / 
-                                                             sqrt(OF_ball_x_dist^2 + OF_ball_y_dist^2))
+jump_catch_prob <- jump_catch_prob %>% mutate(jump_to_ball = ((jump_x * field_ball_x_dist) + (jump_y * field_ball_y_dist)) / 
+                                                             sqrt(field_ball_x_dist^2 + field_ball_y_dist^2))
 jump_catch_prob <- jump_catch_prob %>% mutate(jump_on_angle = acos(jump_to_ball / jump_dist))
-jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = OF_ball_x_dist / OF_ball_dist,
-                                              unit_y = OF_ball_y_dist / OF_ball_dist,
+jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = field_ball_x_dist / field_ball_dist,
+                                              unit_y = field_ball_y_dist / field_ball_dist,
                                               jump_to_side = jump_dist * sin(jump_on_angle),
                                               pos_side_diff = abs( (field_x + (jump_to_ball * unit_x) + (jump_to_side * unit_y)) - pred_x ),
                                               neg_side_diff = abs( (field_x + (jump_to_ball * unit_x) + (jump_to_side * -unit_y)) - pred_x ),
