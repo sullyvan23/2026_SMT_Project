@@ -86,7 +86,6 @@ OF_jump_0.5 <- OF_jump_0.5 %>% filter(pred_accel > -10   &   pred_accel < 20)
 
 jump_catch_prob <- OF_jump_0.5[,c(1:3,13:14,17:22)] %>% left_join(catch_prob_fbs[,c(1,4:10,17,21,35,38,40)], by = c("play_key", "player_id"))
 
-jump_catch_prob <- jump_catch_prob %>% mutate(time_to_ground = time_to_ground - timestamp)
 jump_catch_prob <- jump_catch_prob %>% mutate(jump_x = pred_x - field_x,
                                               jump_y = pred_y - field_y,
                                               jump_dist = sqrt(jump_x^2 + jump_y^2))
@@ -95,7 +94,8 @@ jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_x_dist = ground_x - pred_x
                                               OF_ball_dist = sqrt(OF_ball_x_dist^2 + OF_ball_y_dist^2),
                                               field_ball_x_dist = ground_x - field_x,
                                               field_ball_y_dist = ground_y - field_y,
-                                              field_ball_dist = sqrt(field_ball_x_dist^2 + field_ball_y_dist^2)) %>%
+                                              field_ball_dist = sqrt(field_ball_x_dist^2 + field_ball_y_dist^2),
+                                              jump_dist_decr = field_ball_dist - OF_ball_dist) %>%
                                         relocate(field_ball_x_dist:field_ball_dist, .after = field_y)
 
 ggplot(OF_catchable_positions %>% filter(play_key == "y1_d164_FNQ_PHD92"), aes(x = field_x, y = field_y)) + geom_point()
