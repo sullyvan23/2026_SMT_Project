@@ -84,7 +84,7 @@ OF_jump_0.5 <- OF_jump_0.5 %>% filter(pred_accel > -10   &   pred_accel < 20)
 
 #################################################################################################################################################
 
-jump_catch_prob <- OF_jump_0.5[,c(1:3,13:14,17:22)] %>% left_join(catch_prob_fbs[,c(1,4:10,17,21,40)], by = c("play_key", "player_id"))
+jump_catch_prob <- OF_jump_0.5[,c(1:3,13:14,17:22)] %>% left_join(catch_prob_fbs[,c(1,4:10,17,21,35,38,40)], by = c("play_key", "player_id"))
 
 jump_catch_prob <- jump_catch_prob %>% mutate(time_to_ground = time_to_ground - timestamp)
 jump_catch_prob <- jump_catch_prob %>% mutate(jump_x = pred_x - field_x,
