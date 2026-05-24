@@ -147,14 +147,14 @@ jump_catch_prob <- jump_catch_prob %>% mutate(accel_side = ifelse(is.na(accel_si
                                               accel_on_angle = atan2(accel_side, accel_ball))
 
 
-jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_front_dist = ((OF_ball_x_dist * pred_x_velo) + (OF_ball_y_dist * pred_y_velo)) / 
-                                                                    pred_velo)
-jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_angle = acos(OF_ball_front_dist / OF_ball_dist))
-jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = pred_x_velo / pred_velo,
-                                              unit_y = pred_y_velo / pred_velo,
+jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_front_dist = -((OF_ball_x_dist * pred_x) + (OF_ball_y_dist * pred_y)) / 
+                                                                    sqrt(pred_x^2 + pred_y^2))
+jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_angle = acos(-OF_ball_front_dist / OF_ball_dist))
+jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = pred_x / sqrt(pred_x^2 + pred_y^2),
+                                              unit_y = pred_y / sqrt(pred_x^2 + pred_y^2),
                                               OF_ball_side_dist = OF_ball_dist * sin(OF_ball_angle),
-                                              pos_side_diff = abs( ((OF_ball_front_dist * unit_x) + (OF_ball_side_dist * unit_y)) - OF_ball_x_dist ),
-                                              neg_side_diff = abs( ((OF_ball_front_dist * unit_x) + (OF_ball_side_dist * -unit_y)) - OF_ball_x_dist ),
+                                              pos_side_diff = abs( (pred_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * unit_y)) - ground_x ),
+                                              neg_side_diff = abs( (pred_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * -unit_y)) - ground_x ),
                                               OF_ball_side_dist = ifelse(pos_side_diff < neg_side_diff,
                                                                          OF_ball_side_dist, -OF_ball_side_dist)) %>% 
                                              dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
