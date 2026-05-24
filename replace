@@ -1,0 +1,13 @@
+jump_catch_prob <- jump_catch_prob %>% mutate(accel_ball = ((pred_x_accel * OF_ball_x_dist) + (pred_y_accel * OF_ball_y_dist)) / 
+                                                             sqrt(OF_ball_x_dist^2 + OF_ball_y_dist^2))
+jump_catch_prob <- jump_catch_prob %>% mutate(accel_on_angle = acos(accel_ball / sqrt(pred_x_accel^2 + pred_y_accel^2) ))
+jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = OF_ball_x_dist / OF_ball_dist,
+                                              unit_y = OF_ball_y_dist / OF_ball_dist,
+                                              accel_side = sqrt(pred_x_accel^2 + pred_y_accel^2) * sin(accel_on_angle),
+                                              pos_side_diff = abs( ((accel_ball * unit_x) + (accel_side * unit_y)) - pred_x_accel ),
+                                              neg_side_diff = abs( ((accel_ball * unit_x) + (accel_side * -unit_y)) - pred_x_accel ),
+                                              accel_side = ifelse(pos_side_diff < neg_side_diff,
+                                                                    accel_side, -accel_side)) %>% 
+                                       dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
+                                       relocate(accel_side, .before = accel_on_angle)
+jump_catch_prob <- jump_catch_prob %>% mutate(accel_on_angle = atan2(accel_side, accel_ball))
