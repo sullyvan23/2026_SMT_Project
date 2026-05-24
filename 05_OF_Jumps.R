@@ -146,6 +146,9 @@ jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = OF_ball_x_dist / OF_ball_
 jump_catch_prob <- jump_catch_prob %>% mutate(accel_on_angle = atan2(accel_side, accel_ball))
 
 
+jump_catch_prob <- jump_catch_prob %>% relocate(caught, .after = accel_on_angle)
+
+
 #################################################################################################################################################
 
 
