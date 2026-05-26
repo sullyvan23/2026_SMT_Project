@@ -30,8 +30,7 @@ pred <- c()
 for(fold in catch_prob_folds) {
   train <- catch_prob_fbs[-fold, ]
   test <- catch_prob_fbs[fold, ]
-  model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_abs_need_side_accel, k = 4) + time_to_ground +
-               s(wall_ball_dist, k = 5) + tail, 
+  model <- gam(caught ~ s(OF_need_front_accel, time_to_ground, k = 5) + s(OF_abs_need_side_accel, time_to_ground, k = 4), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
