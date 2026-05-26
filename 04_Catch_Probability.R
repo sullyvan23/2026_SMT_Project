@@ -30,14 +30,13 @@ pred <- c()
 for(fold in catch_prob_folds) {
   train <- catch_prob_fbs[-fold, ]
   test <- catch_prob_fbs[fold, ]
-  model <- gam(caught ~ s(OF_need_front_jerk, k = 5) + s(OF_abs_need_side_jerk, k = 4) + time_to_ground +
-               s(wall_ball_dist, k = 5), 
+  model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_accel + s(OF_need_jerk, k = 3) + s(OF_ball_angle, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1506213
+### 0.1745689
 
 plot(model, page=1)
 plot(pred, act)
@@ -57,18 +56,27 @@ model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_need_side_accel, k = 
 model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_abs_need_side_accel, k = 4) + s(time_to_ground, k = 3), 
              family = binomial, data = train)
 ### 0.1719527
+
 model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_abs_need_side_accel, k = 4) + time_to_ground +
              s(wall_ball_dist, k = 5), 
              family = binomial, data = train)
 ### 0.1506627
 
+model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_accel + s(OF_need_jerk, k = 3) + s(OF_ball_angle, k = 3), 
+             family = binomial, data = train)
+### 0.1684705
+model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_accel + s(OF_need_jerk, k = 3) + s(OF_ball_angle, k = 3) +
+             s(wall_ball_dist, k = 5), 
+             family = binomial, data = train)
+### 0.1430563
 
 
-base_model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_abs_need_side_accel, k = 4) + time_to_ground +
+
+base_model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_accel + s(OF_need_jerk, k = 3) + s(OF_ball_angle, k = 3) +
                   s(wall_ball_dist, k = 5), 
                   family = binomial, data = catch_prob_fbs)
 
-catch_correlations <- round(cor(catch_prob_fbs[,c(4:10,12:39)] , (catch_prob_fbs$caught - predict(base_model, type = "response")) ), 3)
+catch_correlations <- round(cor(catch_prob_fbs[,c(4:10,12:44)] , (catch_prob_fbs$caught - predict(base_model, type = "response")) ), 3)
 plot(catch_prob_fbs$min_xy_speed, (catch_prob_fbs$caught - predict(base_model, type = "response")))
 plot(predict(base_model, type = "response"), catch_prob_fbs$caught)
 
