@@ -224,7 +224,12 @@ all_fly_ball_stats <- all_fly_ball_stats %>% mutate(OF_need_front_velo = 0.68181
                                                     OF_need_side_accel = 0.681818 * ((2 * OF_ball_side_dist) / time_to_ground^2),
                                                     OF_abs_need_front_accel = abs(OF_need_front_accel),
                                                     OF_abs_need_side_accel = abs(OF_need_side_accel),
-                                                    OF_need_accel = 0.681818 * ((2 * OF_ball_dist) / time_to_ground^2))
+                                                    OF_need_accel = 0.681818 * ((2 * OF_ball_dist) / time_to_ground^2),
+                                                    OF_need_front_jerk = 0.681818 * ((6 * OF_ball_front_dist) / time_to_ground^3),
+                                                    OF_need_side_jerk = 0.681818 * ((6 * OF_ball_side_dist) / time_to_ground^3),
+                                                    OF_abs_need_front_jerk = abs(OF_need_front_jerk),
+                                                    OF_abs_need_side_jerk = abs(OF_need_side_jerk),
+                                                    OF_need_jerk = 0.681818 * ((6 * OF_ball_dist) / time_to_ground^3))
 
-all_fly_ball_stats <- all_fly_ball_stats %>% relocate(caught, .after = OF_need_accel)
+all_fly_ball_stats <- all_fly_ball_stats %>% relocate(caught, .after = OF_need_jerk)
 
