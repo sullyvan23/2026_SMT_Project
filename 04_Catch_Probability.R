@@ -3,7 +3,7 @@ library(Metrics)
 
 catch_prob_fbs <- all_fly_ball_stats %>% filter(player_id_down == 255   |   player_id == player_id_down)
 
-catch_correlations <- round(cor(catch_prob_fbs[,c(4:10,12:39)] , catch_prob_fbs$caught), 3)
+catch_correlations <- round(cor(catch_prob_fbs[,c(4:10,12:44)] , catch_prob_fbs$caught), 3)
 
 plot(catch_prob_fbs$OF_need_velo, catch_prob_fbs$caught)
 
@@ -30,7 +30,8 @@ pred <- c()
 for(fold in catch_prob_folds) {
   train <- catch_prob_fbs[-fold, ]
   test <- catch_prob_fbs[fold, ]
-  model <- gam(caught ~ s(OF_need_front_accel, time_to_ground, k = 5) + s(OF_abs_need_side_accel, time_to_ground, k = 4), 
+  model <- gam(caught ~ s(OF_need_front_jerk, k = 5) + s(OF_abs_need_side_jerk, k = 4) + time_to_ground +
+               s(wall_ball_dist, k = 5), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
