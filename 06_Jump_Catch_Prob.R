@@ -38,3 +38,17 @@ plot(jump_catch_prob$jump_to_side, (jump_catch_prob$caught - predict(base_model,
 jump_catch_prob_pred <- jump_catch_prob %>% ungroup() %>% mutate(catch_prob = round( predict(base_model, type = "response") ,3) )
 jump_catch_prob_pred <- jump_catch_prob_pred %>% left_join(catch_prob_pred[,c(1,8,46)], by = c("play_key", "player_id"), suffix = c("", "_initial"))
 jump_catch_prob_pred <- jump_catch_prob_pred %>% mutate(catch_prob_increase = catch_prob - catch_prob_initial)
+
+################################################################################################################################################
+
+jump_catch_prob_pred_2 <- jump_catch_prob_pred
+
+just_catch <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_accel + s(OF_need_jerk, k = 3) + s(OF_ball_angle, k = 3) +
+                  s(wall_ball_dist, k = 5), 
+                  family = binomial, data = jump_catch_prob_pred_2)
+
+jump_catch_prob_pred_2 <- jump_catch_prob_pred_2 %>% mutate(catch_prob_initial = round( predict(just_catch, type = "response"), 3))
+jump_catch_prob_pred_2 <- jump_catch_prob_pred_2 %>% mutate(catch_prob_increase = catch_prob - catch_prob_initial)
+
+
+
