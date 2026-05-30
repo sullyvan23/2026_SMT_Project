@@ -42,6 +42,7 @@ logLoss(act, pred)
 plot(model, page=1)
 plot(pred, act)
 
+
 model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_need_side_accel, k = 5), 
              family = binomial, data = train)
 ### 0.2065961
@@ -51,9 +52,9 @@ model <- gam(caught ~ s(OF_ball_angle, k = 3) + OF_ball_dist + s(time_to_ground,
 model <- gam(caught ~ s(OF_ball_angle, k = 3) + s(time_to_ground, k = 3) + s(OF_need_accel, k = 4), 
              family = binomial, data = train)
 ### 0.1759485
-model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_need_side_accel, k = 5) + s(time_to_ground, k = 3), 
+model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_need_side_accel, k = 5) + time_to_ground, 
              family = binomial, data = train)
-### 0.1719989
+### 0.1712701
 model <- gam(caught ~ s(OF_need_front_accel, k = 5) + s(OF_abs_need_side_accel, k = 4) + s(time_to_ground, k = 3), 
              family = binomial, data = train)
 ### 0.1719527
@@ -70,6 +71,18 @@ model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_need_velo, k = 3) + OF_need_
              s(wall_ball_dist, k = 5), 
              family = binomial, data = train)
 ### 0.1430563
+
+model <- gam(caught ~ s(OF_need_front_velo, k = 3) + OF_abs_need_side_velo + 
+             s(OF_need_front_accel, k = 4) + s(OF_abs_need_side_accel, k = 3) + 
+             s(OF_need_velo, k = 4) + time_to_ground, 
+             family = binomial, data = train)
+### 0.1628374
+model <- gam(caught ~ OF_need_front_velo + OF_abs_need_side_velo + 
+             s(OF_need_front_accel, k = 4) + s(OF_abs_need_side_accel, k = 3) + 
+             s(OF_need_velo, k = 4) + time_to_ground + s(wall_ball_dist, k = 5), 
+             family = binomial, data = train)
+### 0.143553
+
 
 
 
