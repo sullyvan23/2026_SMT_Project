@@ -50,3 +50,8 @@ bm.free()
 obj = bpy.data.objects.new("GridSurface", field)
 bpy.context.collection.objects.link(obj)
 
+mat = bpy.data.materials.new("GreenField")
+mat.use_nodes = True
+mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
+
+obj.data.materials.append(mat)
