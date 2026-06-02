@@ -39,8 +39,10 @@ for x in range(min_x, max_x):
         point_3 = points.get((x + 1, y + 1))
         point_4 = points.get((x, y + 1))
 
-        if point_1 and point_2 and point_3 and point_4:
-            bm.faces.new([point_1, point_2, point_3, point_4])
+        vertices = [point_1, point_2, point_3, point_4]
+        vertices = [vert for vert in vertices if vert is not None]
+        if len(vertices) >= 3:
+            bm.faces.new(vertices)
 
 
 field = bpy.data.meshes.new("GridSurface")
@@ -50,8 +52,7 @@ bm.free()
 obj = bpy.data.objects.new("GridSurface", field)
 bpy.context.collection.objects.link(obj)
 
-mat = bpy.data.materials.new("GreenField")
-mat.use_nodes = True
-mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
 
+mat = bpy.data.materials.new("GreenField")
+mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
 obj.data.materials.append(mat)
