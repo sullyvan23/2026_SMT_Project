@@ -10,3 +10,28 @@ ex_ball_flight <- ex_ball_flight %>% arrange(timestamp)
 ex_ball_flight <- ex_ball_flight %>% filter(timestamp <= max(ifelse(timestamp%%1 != 0, timestamp, 0)) ) 
 
 write.csv(ex_ball_flight, "ex_ball_flight.csv", row.names = FALSE)
+
+##########################################################################################################################################################################
+
+ANI_field_mesh <- expand.grid(ball_position_x = seq(-300, 300, by = 1), ball_position_y = seq(-10, 450, by = 1)) %>%
+                  filter(abs(ball_position_x) <= (ball_position_y + 10))
+
+ANI_field_mesh <- ANI_field_mesh %>% mutate(home_dist = sqrt(ball_position_x^2 + ball_position_y^2),
+                                            spray_angle = atan(ball_position_x/ball_position_y))
+
+ANI_field_mesh <- ANI_field_mesh %>% mutate(wall_dist = predict(wall_ANI_model, newdata = ANI_field_mesh))
+ANI_field_mesh <- ANI_field_mesh %>% mutate(wall_dist = ifelse(wall_dist < 280, 280, wall_dist))
+
+ANI_field_mesh <- ANI_field_mesh %>% filter(home_dist <= wall_dist)
+
+ANI_field_mesh <- ANI_field_mesh %>% mutate(ball_position_z = predict(ground_ANI_model, newdata = ANI_field_mesh))
+ANI_field_mesh <- ANI_field_mesh %>% dplyr::select(ball_position_x, ball_position_y, ball_position_z)
+
+write.csv(ANI_field_mesh, "ANI_field_mesh.csv", row.names = FALSE)
+
+
+
+plot(ANI_field_mesh$ball_position_x, ANI_field_mesh$ball_position_y)
+
+ggplot(ANI_field_mesh, aes(x = ball_position_x, y = ball_position_y, color = ball_position_z)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
