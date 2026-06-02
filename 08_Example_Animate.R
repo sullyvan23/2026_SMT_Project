@@ -13,6 +13,9 @@ write.csv(ex_ball_flight, "ex_ball_flight.csv", row.names = FALSE)
 
 ##########################################################################################################################################################################
 
+test_mesh <-  expand.grid(ball_position_x = seq(0, 10, by = 1), ball_position_y = seq(0, 10, by = 1), ball_position_z = 0)
+write.csv(test_mesh, "test_mesh.csv", row.names = FALSE)
+
 ANI_field_mesh <- expand.grid(ball_position_x = seq(-300, 300, by = 1), ball_position_y = seq(-10, 450, by = 1)) %>%
                   filter(abs(ball_position_x) <= (ball_position_y + 10))
 
