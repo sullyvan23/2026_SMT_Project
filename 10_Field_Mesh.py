@@ -57,6 +57,50 @@ mat = bpy.data.materials.new("grass")
 mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
 obj.data.materials.append(mat)
 
+######################################################################################################################################################################################
+
+import bpy
+import csv
+import bmesh
+
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete()
+
+### field wall
+file_loc = r"C:\Users\Sully\OneDrive\Documents\SMT26\ANI_wall_blender.csv"
+
+bm = bmesh.new()
+points = []
+
+with open(file_loc, newline='') as f:
+    locations = csv.DictReader(f)
+  
+    for row in locations:
+      x = float(row['ball_position_x'])
+      y = float(row['ball_position_y'])
+      z = float(row['ball_position_z'])
+      points.append( bm.verts.new((x, y, z)) )
+
+bm.verts.ensure_lookup_table()
+
+edges = []
+for i in range(len(points)):
+    edges.append( bm.edges.new((points[i], points[(i + 1)%len(points)])) )
+
+bmesh.ops.edgenet_fill(bm, edges=edges)
+
+extrude_up = bmesh.ops.extrude_face_region(bm, geom=bm.faces[:])
+for g in extrude_up["geom"]:
+    if isinstance(g, bmesh.types.BMVert):
+        g.co.z += 8
+
+
+wall = bpy.data.meshes.new("GridSurface")
+bm.to_mesh(wall)
+bm.free()
+
+obj = bpy.data.objects.new("GridSurface", wall)
+bpy.context.collection.objects.link(obj)
 
 ######################################################################################################################################################################################
 
