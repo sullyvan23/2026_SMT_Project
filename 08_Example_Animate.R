@@ -13,9 +13,6 @@ write.csv(ex_ball_flight, "ex_ball_flight.csv", row.names = FALSE)
 
 ##########################################################################################################################################################################
 
-test_mesh <-  expand.grid(ball_position_x = seq(0, 10, by = 1), ball_position_y = seq(0, 10, by = 1), ball_position_z = 0)
-write.csv(test_mesh, "test_mesh.csv", row.names = FALSE)
-
 ANI_field_mesh <- expand.grid(ball_position_x = seq(-300, 300, by = 1), ball_position_y = seq(-10, 450, by = 1)) %>%
                   filter(abs(ball_position_x) <= (ball_position_y + 10))
 
@@ -25,12 +22,32 @@ ANI_field_mesh <- ANI_field_mesh %>% mutate(home_dist = sqrt(ball_position_x^2 +
 ANI_field_mesh <- ANI_field_mesh %>% mutate(wall_dist = predict(wall_ANI_model, newdata = ANI_field_mesh))
 ANI_field_mesh <- ANI_field_mesh %>% mutate(wall_dist = ifelse(wall_dist < 280  |  is.na(wall_dist), 280, wall_dist))
 
-ANI_field_mesh <- ANI_field_mesh %>% filter(home_dist <= wall_dist)
+ANI_field_mesh <- ANI_field_mesh %>% filter(home_dist <= (wall_dist + 2))
 
 ANI_field_mesh <- ANI_field_mesh %>% mutate(ball_position_z = predict(ground_ANI_model, newdata = ANI_field_mesh))
 ANI_field_mesh <- ANI_field_mesh %>% dplyr::select(ball_position_x, ball_position_y, ball_position_z)
 
 write.csv(ANI_field_mesh, "ANI_field_mesh.csv", row.names = FALSE)
+
+##########################################################################################################################################################################
+
+ANI_wall_blender <- expand.grid(spray_angle = seq(-0.8, 0.8, by = 0.01))
+ANI_wall_blender <- ANI_wall_blender %>% mutate(home_dist = predict(wall_ANI_model, newdata = ANI_wall_blender))
+
+ANI_wall_blender <- ANI_wall_blender %>% mutate(ball_position_x = home_dist * sin(spray_angle),
+                                                ball_position_y = home_dist * cos(spray_angle))
+
+ANI_wall_blender <- ANI_wall_blender %>% mutate(ball_position_z = predict(ground_ANI_model, newdata = ANI_wall_blender) - 0.1)
+
+temp <- ANI_wall_blender %>% mutate(home_dist = home_dist + 1)
+temp <- temp %>% mutate(ball_position_x = home_dist * sin(spray_angle),
+                        ball_position_y = home_dist * cos(spray_angle))
+temp <- temp %>% arrange(desc(spray_angle))
+
+ANI_wall_blender <- bind_rows(ANI_wall_blender, temp)
+ANI_wall_blender <- ANI_wall_blender %>% dplyr::select(ball_position_x, ball_position_y, ball_position_z)
+
+write.csv(ANI_wall_blender, "ANI_wall_blender.csv", row.names = FALSE)
 
 ##########################################################################################################################################################################
 
@@ -56,6 +73,8 @@ write.csv(ANI_foul_lines, "ANI_foul_lines.csv", row.names = FALSE)
 ##########################################################################################################################################################################
 
 plot(ANI_field_mesh$ball_position_x, ANI_field_mesh$ball_position_y)
+
+plot(ANI_wall_blender$ball_position_x, ANI_wall_blender$ball_position_y)
 
 ggplot(ANI_field_mesh, aes(x = ball_position_x, y = ball_position_y, color = ball_position_z)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
