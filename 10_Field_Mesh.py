@@ -45,17 +45,47 @@ for x in range(min_x, max_x):
             bm.faces.new(vertices)
 
 
-field = bpy.data.meshes.new("GridSurface")
+field = bpy.data.meshes.new("Field_Base")
 bm.to_mesh(field)
 bm.free()
 
-obj = bpy.data.objects.new("GridSurface", field)
+obj = bpy.data.objects.new("Field_Base", field)
 bpy.context.collection.objects.link(obj)
 
 
 mat = bpy.data.materials.new("grass")
 mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 1, 0, 1)
 obj.data.materials.append(mat)
+
+######################################################################################################################################################################################
+### dirt
+
+import bpy
+
+bpy.ops.mesh.primitive_circle_add(
+    vertices = 50,
+    radius = 5,
+    fill_type='NGON',
+    location = (0, 0, 5)
+)
+circle = bpy.context.active_object
+
+shrink = circle.modifiers.new(
+    name="Shrinkwrap",
+    type='SHRINKWRAP'
+)
+
+shrink.target = bpy.data.objects["Field_Base"]
+shrink.wrap_method = 'PROJECT'
+
+shrink.use_project_z = True
+shrink.use_negative_direction = True
+shrink.offset = 0.01
+
+# Apply modifier
+bpy.context.view_layer.objects.active = circle
+bpy.ops.object.modifier_apply(modifier=shrink.name)
+
 
 ######################################################################################################################################################################################
 
