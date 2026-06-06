@@ -1,13 +1,29 @@
-jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_front_dist = -((OF_ball_x_dist * pred_x) + (OF_ball_y_dist * pred_y)) / 
-                                                                    sqrt(pred_x^2 + pred_y^2))
-jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_angle = acos(-OF_ball_front_dist / OF_ball_dist))
-jump_catch_prob <- jump_catch_prob %>% mutate(unit_x = pred_x / sqrt(pred_x^2 + pred_y^2),
-                                              unit_y = pred_y / sqrt(pred_x^2 + pred_y^2),
-                                              OF_ball_side_dist = OF_ball_dist * sin(OF_ball_angle),
-                                              pos_side_diff = abs( (pred_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * unit_y)) - ground_x ),
-                                              neg_side_diff = abs( (pred_x + (OF_ball_front_dist * -unit_x) + (OF_ball_side_dist * -unit_y)) - ground_x ),
-                                              OF_ball_side_dist = ifelse(pos_side_diff < neg_side_diff,
-                                                                         OF_ball_side_dist, -OF_ball_side_dist)) %>% 
-                                             dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
-                                             relocate(OF_ball_side_dist, .before = OF_ball_angle)
-jump_catch_prob <- jump_catch_prob %>% mutate(OF_ball_angle = atan2(OF_ball_side_dist, OF_ball_front_dist)
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(velo_ball = ((x_velo * OF_ball_x_dist) + (y_velo * OF_ball_y_dist)) / 
+                                                             OF_ball_dist)
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(velo_on_angle = acos(velo_ball / speed))
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(unit_x = OF_ball_x_dist / OF_ball_dist,
+                                              unit_y = OF_ball_y_dist / OF_ball_dist,
+                                              velo_side = speed * sin(velo_on_angle),
+                                              pos_side_diff = abs( ((velo_ball * unit_x) + (velo_side * unit_y)) - x_velo ),
+                                              neg_side_diff = abs( ((velo_ball * unit_x) + (velo_side * -unit_y)) - x_velo ),
+                                              velo_side = ifelse(pos_side_diff < neg_side_diff,
+                                                                    velo_side, -velo_side)) %>% 
+                                       dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
+                                       relocate(velo_side, .before = velo_on_angle)
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(velo_on_angle = atan2(velo_side, velo_ball))
+
+
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(accel_ball = ((x_accel * OF_ball_x_dist) + (y_accel * OF_ball_y_dist)) / 
+                                                             OF_ball_dist)
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(accel_on_angle = acos(accel_ball / accel_mag ))
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(unit_x = OF_ball_x_dist / OF_ball_dist,
+                                              unit_y = OF_ball_y_dist / OF_ball_dist,
+                                              accel_side = accel_mag * sin(accel_on_angle),
+                                              pos_side_diff = abs( ((accel_ball * unit_x) + (accel_side * unit_y)) - x_accel ),
+                                              neg_side_diff = abs( ((accel_ball * unit_x) + (accel_side * -unit_y)) - x_accel ),
+                                              accel_side = ifelse(pos_side_diff < neg_side_diff,
+                                                                    accel_side, -accel_side)) %>% 
+                                       dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
+                                       relocate(accel_side, .before = accel_on_angle)
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(accel_side = ifelse(is.na(accel_side), 0, accel_side),
+                                              accel_on_angle = atan2(accel_side, accel_ball))
