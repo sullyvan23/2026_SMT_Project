@@ -106,15 +106,16 @@ pred <- c()
 for(fold in catch_prob_folds_2) {
   train <- catch_prob_all_time_2[-fold, ]
   test <- catch_prob_all_time_2[fold, ]
-  model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_ball_angle, k = 3) + s(time_left, k = 3) + s(speed, k = 3) + s(velo_on_angle, k = 3) + s(accel_ball, k = 3), 
+  model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_ball_angle, k = 3) + s(time_left, k = 3) + 
+               s(speed, k = 3) + s(velo_on_angle, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.2152476
+### 0.1977048
 mean(act == ifelse(pred > 0.5, 1, 0))
-### 0.930093
+### 0.9348409
 
 plot(model, page=1)
 plot(pred, act)
