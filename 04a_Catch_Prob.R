@@ -96,6 +96,18 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(accel_side = ifelse(is
                                               accel_on_angle = atan2(accel_side, accel_ball))
 
 
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(time_left >= 0)
+
+#####################################################################################################################################################################
+
+lagged_player_movement <- catch_prob_all_time_pred %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n()) %>% select(OF_ball_dist, OF_ball_angle, time_left, caught)
+
+hist(check$OF_ball_dist, breaks = 100)
+
+lagged_player_movement <- lagged_player_movement %>% filter(OF_ball_dist > 16)
+
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(!(play_key %in% lagged_player_movement$play_key))
+
 #####################################################################################################################################################################
 
 set.seed(279)
@@ -106,19 +118,39 @@ pred <- c()
 for(fold in catch_prob_folds_2) {
   train <- catch_prob_all_time_2[-fold, ]
   test <- catch_prob_all_time_2[fold, ]
-  model <- gam(caught ~ s(OF_ball_dist, k = 3) + s(OF_ball_angle, k = 3) + s(time_left, k = 3) + 
-               s(speed, k = 3) + s(velo_on_angle, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5), 
+  model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
+               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1977048
+### 0.1478224
 mean(act == ifelse(pred > 0.5, 1, 0))
-### 0.9348409
+### 0.9513262
 
 plot(model, page=1)
 plot(pred, act)
 
 
 
+catch_prob_model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
+                        s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3), 
+                        family = binomial, data = catch_prob_all_time_2)
+
+catch_prob_all_time_pred <- catch_prob_all_time_2 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"))
+
+
+catch_correlations <- round(cor(catch_prob_all_time_pred[,3:41] , (catch_prob_all_time_pred$caught - catch_prob_all_time_pred$catch_prob) ), 3)
+
+
+
+
+ggplot(catch_prob_all_time_2, aes(x = OF_ball_dist, y = time_left, color = caught)) + 
+geom_point() + scale_color_gradient2(high = "green", low = "red", midpoint = 0.5)
+
+ggplot(catch_prob_all_time_pred, aes(x = OF_ball_dist, y = time_left, color = caught - catch_prob)) + 
+geom_point() + scale_color_gradient2(high = "green", low = "red", midpoint = 0)
+
+
+caught_catch_prob <- catch_prob_all_time_pred %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n())
