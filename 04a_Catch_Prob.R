@@ -113,12 +113,13 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(!(play_key %in% lagged
 set.seed(279)
 catch_prob_folds_2 <- createFolds(catch_prob_all_time_2$caught, k = 2)
 
+
 act <- c()
 pred <- c()
 for(fold in catch_prob_folds_2) {
   train <- catch_prob_all_time_2[-fold, ]
   test <- catch_prob_all_time_2[fold, ]
-  model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
+  model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 5) + s(time_left, k = 6) + 
                s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
@@ -144,8 +145,6 @@ catch_prob_all_time_pred <- catch_prob_all_time_2 %>% ungroup() %>% mutate(catch
 catch_correlations <- round(cor(catch_prob_all_time_pred[,3:41] , (catch_prob_all_time_pred$caught - catch_prob_all_time_pred$catch_prob) ), 3)
 
 
-
-
 ggplot(catch_prob_all_time_2, aes(x = OF_ball_dist, y = time_left, color = caught)) + 
 geom_point() + scale_color_gradient2(high = "green", low = "red", midpoint = 0.5)
 
@@ -154,3 +153,46 @@ geom_point() + scale_color_gradient2(high = "green", low = "red", midpoint = 0)
 
 
 caught_catch_prob <- catch_prob_all_time_pred %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n())
+
+#####################################################################################################################################################################
+
+ball_need_positions <- ball_positions %>% mutate(play_key = paste0(game_string, play_per_game)) %>% filter(play_key %in% catch_prob_all_time_2$play_key)
+
+catch_prob_all_time_3 <- catch_prob_all_time_2 %>% left_join(ball_need_positions[,c(3:6,11)], by = c("play_key", "timestamp"))
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(xy_ball_dist = sqrt((pred_x - ball_position_x)^2 + (pred_y - ball_position_y)^2) ) %>% 
+                                                   filter(!is.na(xy_ball_dist))
+
+
+set.seed(238)
+catch_prob_folds_3 <- createFolds(catch_prob_all_time_3$caught, k = 2)
+
+
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds_3) {
+  train <- catch_prob_all_time_3[-fold, ]
+  test <- catch_prob_all_time_3[fold, ]
+  model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 5) + s(time_left, k = 6) + 
+               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xy_ball_dist, k = 3), 
+               family = binomial, data = train)
+  act <- c(act, test$caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.1467287
+
+plot(model, page=1)
+
+
+catch_prob_model_2 <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
+                        s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xy_ball_dist, k = 3), 
+                        family = binomial, data = catch_prob_all_time_3)
+
+catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
+
+write.csv(catch_prob_all_time_3, "catch_prob_all_time_3.csv", row.names = FALSE)
+
+#####################################################################################################################################################################
+
+
+
