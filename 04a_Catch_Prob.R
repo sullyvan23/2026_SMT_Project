@@ -201,7 +201,7 @@ for(fold in catch_prob_folds_3) {
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
   model <- randomForest(as.factor(caught) ~ OF_ball_dist + OF_ball_angle + time_left + velo_ball + accel_ball + launch_angle + wall_ball_dist, 
-                        data = train, ntree = 450)
+                        data = train, ntree = 400)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "prob")[, 2])
 }
