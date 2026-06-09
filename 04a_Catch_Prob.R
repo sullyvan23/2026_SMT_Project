@@ -1,9 +1,12 @@
-
-OF_positions <- player_positions %>% filter(player_id %in% c(7:9)) %>% mutate(play_key = paste0(game_string, play_per_game))
-OF_need_positions <- OF_positions %>% filter(play_key %in% catch_prob_all_time$play_key)
+library(dplyr)
+library(mgcv)
+library(caret)
 
 catch_prob_all_time <- catch_prob_fbs[,c(1:8,17,19,45)] %>% left_join(fly_balls[,5:7], by = "play_key")
 catch_prob_all_time <- catch_prob_all_time %>% mutate(timestamp_ground = timestamp_hit + (1000*time_to_ground))
+
+OF_positions <- player_positions %>% filter(player_id %in% c(7:9)) %>% mutate(play_key = paste0(game_string, play_per_game))
+OF_need_positions <- OF_positions %>% filter(play_key %in% catch_prob_all_time$play_key)
 
 catch_prob_all_time <- catch_prob_all_time %>% left_join(OF_need_positions[,c(3:6,11)], by = c("play_key", "player_id"))
 catch_prob_all_time <- catch_prob_all_time %>% filter(timestamp >= (timestamp_hit-200), timestamp <= timestamp_down)
@@ -25,8 +28,8 @@ catch_prob_all_time <- catch_prob_all_time %>% group_by(play_key, player_id) %>%
 
                               .x})
 
-hist(catch_prob_all_time_2$rmse_x, breaks = 100)
-hist(catch_prob_all_time_2$rmse_y, breaks = 100)
+hist(catch_prob_all_time$rmse_x, breaks = 100)
+hist(catch_prob_all_time$rmse_y, breaks = 100)
 
 
 catch_prob_all_time_2 <- catch_prob_all_time %>% filter(rmse_x <= 0.3, rmse_y <= 0.4)
@@ -100,13 +103,16 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(time_left >= 0)
 
 #####################################################################################################################################################################
 
-lagged_player_movement <- catch_prob_all_time_pred %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n()) %>% select(OF_ball_dist, OF_ball_angle, time_left, caught)
+lagged_player_movement <- catch_prob_all_time_2 %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n()) %>% select(OF_ball_dist, OF_ball_angle, time_left, caught)
 
-hist(check$OF_ball_dist, breaks = 100)
+hist(lagged_player_movement$OF_ball_dist, breaks = 100)
 
 lagged_player_movement <- lagged_player_movement %>% filter(OF_ball_dist > 16)
 
 catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(!(play_key %in% lagged_player_movement$play_key))
+
+
+save.image("save.Rdata")
 
 #####################################################################################################################################################################
 
@@ -159,8 +165,8 @@ caught_catch_prob <- catch_prob_all_time_pred %>% group_by(play_key, player_id) 
 ball_need_positions <- ball_positions %>% mutate(play_key = paste0(game_string, play_per_game)) %>% filter(play_key %in% catch_prob_all_time_2$play_key)
 
 catch_prob_all_time_3 <- catch_prob_all_time_2 %>% left_join(ball_need_positions[,c(3:6,11)], by = c("play_key", "timestamp"))
-catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(xy_ball_dist = sqrt((pred_x - ball_position_x)^2 + (pred_y - ball_position_y)^2) ) %>% 
-                                                   filter(!is.na(xy_ball_dist))
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(xyz_ball_dist = sqrt((pred_x - ball_position_x)^2 + (pred_y - ball_position_y)^2 + (ball_position_z - 3)^2) ) %>% 
+                                                   filter(!is.na(xyz_ball_dist))
 
 
 set.seed(238)
@@ -173,24 +179,25 @@ for(fold in catch_prob_folds_3) {
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
   model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 5) + s(time_left, k = 6) + 
-               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xy_ball_dist, k = 3), 
+               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1467287
+### 0.1448625
 
 plot(model, page=1)
 
 
 catch_prob_model_2 <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
-                        s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xy_ball_dist, k = 3), 
+                        s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
                         family = binomial, data = catch_prob_all_time_3)
 
 catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
 
-write.csv(catch_prob_all_time_3, "catch_prob_all_time_3.csv", row.names = FALSE)
+
+caught_catch_prob <- catch_prob_all_time_pred_2 %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n())
 
 #####################################################################################################################################################################
 library(randomForest)
