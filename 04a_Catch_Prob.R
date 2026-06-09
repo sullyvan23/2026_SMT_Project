@@ -195,27 +195,23 @@ write.csv(catch_prob_all_time_3, "catch_prob_all_time_3.csv", row.names = FALSE)
 #####################################################################################################################################################################
 library(randomForest)
 
-act <- c()
-pred <- c()
-for(fold in catch_prob_folds_3) {
-  train <- catch_prob_all_time_3[-fold, ]
-  test <- catch_prob_all_time_3[fold, ]
-  model <- randomForest(as.factor(caught) ~ OF_ball_dist + OF_ball_angle + time_left + velo_ball + accel_ball + launch_angle + wall_ball_dist, 
-                        data = train, ntree = 400)
-  act <- c(act, test$caught)
-  pred <- c(pred, predict(model, newdata = test, type = "prob")[, 2])
+set.seed(108)
+catch_prob_folds_4 <- groupKFold(catch_prob_all_time_3$play_key, k = 2)
+
+
+catch_prob_all_time_pred_3 <- data.frame()
+for(fold in catch_prob_folds_4) {
+  train <- catch_prob_all_time_3[-fold, ] %>% ungroup()
+  test <- catch_prob_all_time_3[fold, ] %>% ungroup()
+  model <- randomForest(as.factor(caught) ~ OF_ball_dist + OF_ball_angle + time_left + velo_ball + accel_ball + time_to_ground + wall_ball_dist + xy_ball_dist, 
+                        data = train, ntree = 300)
+
+  test <- test %>% mutate(catch_prob = round( pmin( pmax( predict(model, newdata = test, type = "prob")[, 2], 0.001 ), 0.999 ), 3) )
+  catch_prob_all_time_pred_3 <- bind_rows(catch_prob_all_time_pred_3, test)
 }
-pred <- pmin(pmax(pred, 0.001), 0.999)
-logLoss(act, pred)
-### 0.03094795
-
-
-catch_prob_model_3 <- randomForest(as.factor(caught) ~ OF_ball_dist + OF_ball_angle + time_left + accel_ball + launch_angle + wall_ball_dist, 
-                                   data = catch_prob_all_time_3, ntree = 400)
-
-catch_prob_all_time_pred_3 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = round( pmin( pmax(predict(catch_prob_model_3, type = "prob")[, 2], 0.001), 0.999), 3) )
 logLoss(catch_prob_all_time_pred_3$caught, catch_prob_all_time_pred_3$catch_prob)
-### 0.01713212
+### 0.1647268
+
 
 catch_correlations <- round(cor(catch_prob_all_time_pred_3[,3:45] , (catch_prob_all_time_pred_3$caught - catch_prob_all_time_pred_3$catch_prob) ), 3)
 
@@ -226,10 +222,12 @@ catch_prob_all_time_pred_4 <- catch_prob_all_time_pred_3 %>% group_by(play_key, 
                  group_modify(~{group <<- group + 1
                               message(group)
                                 
-                              model <- gam(catch_prob ~ s(time_left, k = 3), data = .x )
+                              model <- gam(catch_prob ~ s(time_left, k = 5), data = .x )
                               .x$smooth_catch_prob <- round( pmin( pmax(predict(model), 0.001), 0.999), 3)
                               .x})
 logLoss(catch_prob_all_time_pred_4$caught, catch_prob_all_time_pred_4$smooth_catch_prob)
-### 0.01691331
+### 0.01693772
 
+
+caught <- catch_prob_all_time_pred_4 %>% filter(caught == 1) %>% group_by(play_key, player_id) %>% filter(row_number() == 1)
 
