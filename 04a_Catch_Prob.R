@@ -169,34 +169,36 @@ catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(xyz_ball_dist = sqrt((
                                                    filter(!is.na(xyz_ball_dist))
 
 
-set.seed(238)
-catch_prob_folds_3 <- createFolds(catch_prob_all_time_3$caught, k = 2)
-
+set.seed(108)
+catch_prob_folds_4 <- groupKFold(catch_prob_all_time_3$play_key, k = 2)
 
 act <- c()
 pred <- c()
-for(fold in catch_prob_folds_3) {
+for(fold in catch_prob_folds_4) {
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
-  model <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 5) + s(time_left, k = 6) + 
-               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
-               ti(velo_on_angle, time_left), 
+  model <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + 
+               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1414212
+### 0.146532
 
 plot(model, page=1)
 
 
-catch_prob_model_2 <- gam(caught ~ s(OF_ball_dist, k = 6) + s(OF_ball_angle, k = 3) + s(time_left, k = 6) + 
-                        s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 5) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
-                         ti(velo_on_angle, time_left), 
-                        family = binomial, data = catch_prob_all_time_3)
+catch_prob_model_2 <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + 
+                          s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
+                          family = binomial, data = catch_prob_all_time_3)
 
 catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
+
+
+catch_correlations <- round(cor(catch_prob_all_time_pred_2[,3:45] , (catch_prob_all_time_pred_2$caught - catch_prob_all_time_pred_2$catch_prob) ), 3)
+                                
+catch_correlations <- round(cor( abs(catch_prob_all_time_pred_2[,3:45]) , (catch_prob_all_time_pred_2$caught - catch_prob_all_time_pred_2$catch_prob) ), 3)
 
 #####################################################################################################################################################################
 
@@ -215,10 +217,6 @@ plot(not_caught_catch_prob$time_left, not_caught_catch_prob$catch_prob)
 
 check_catch_prob <- catch_prob_all_time_pred_2 %>% group_by(play_key, player_id) %>% mutate(time_left = round(time_left / (max(time_left) * 0.05)) * 0.05)
 check_catch_prob <- check_catch_prob %>% group_by(time_left) %>% summarise(act_catch_prob = mean(caught), pred_catch_prob = mean(catch_prob), count = n())
-
-#####################################################################################################################################################################
-
-catch_prob_all_time_pred_2 <- catch_prob_all_time_pred_2 %>% mutate(residual)
 
 #####################################################################################################################################################################
 library(randomForest)
