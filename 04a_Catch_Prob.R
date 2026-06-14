@@ -177,19 +177,19 @@ pred <- c()
 for(fold in catch_prob_folds_4) {
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
-  model <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + 
+  model <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) +
                s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.146532
+### 0.1421398
 
 plot(model, page=1)
 
 
-catch_prob_model_2 <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + 
+catch_prob_model_2 <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) + 
                           s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
                           family = binomial, data = catch_prob_all_time_3)
 
@@ -217,6 +217,35 @@ plot(not_caught_catch_prob$time_left, not_caught_catch_prob$catch_prob)
 
 check_catch_prob <- catch_prob_all_time_pred_2 %>% group_by(play_key, player_id) %>% mutate(time_left = round(time_left / (max(time_left) * 0.05)) * 0.05)
 check_catch_prob <- check_catch_prob %>% group_by(time_left) %>% summarise(act_catch_prob = mean(caught), pred_catch_prob = mean(catch_prob), count = n())
+
+#####################################################################################################################################################################
+
+check_catch_prob <- catch_prob_all_time_pred_2 %>% group_by(play_key, player_id) %>% mutate(time_left = round(time_left / (max(time_left) * 0.05)) * 0.05)
+check_catch_prob <- check_catch_prob %>% filter(time_left <= 0.2)
+
+catch_correlations <- round(cor(check_catch_prob[,3:45] , (check_catch_prob$caught - check_catch_prob$catch_prob) ), 3)
+catch_correlations <- round(cor( abs(check_catch_prob[,3:45]) , (check_catch_prob$caught - check_catch_prob$catch_prob) ), 3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #####################################################################################################################################################################
 library(randomForest)
