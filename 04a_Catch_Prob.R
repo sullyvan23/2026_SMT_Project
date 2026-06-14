@@ -250,10 +250,6 @@ catch_correlations <- round(cor( abs(check_catch_prob[,3:45]) , (check_catch_pro
 #####################################################################################################################################################################
 library(randomForest)
 
-set.seed(108)
-catch_prob_folds_4 <- groupKFold(catch_prob_all_time_3$play_key, k = 2)
-
-
 catch_prob_all_time_pred_3 <- data.frame()
 for(fold in catch_prob_folds_4) {
   train <- catch_prob_all_time_3[-fold, ] %>% ungroup()
