@@ -1,0 +1,27 @@
+
+ball_events <- ball_events %>% mutate(play_key = paste0(game_string, play_per_game))
+catch_prob_plays <- catch_prob_all_time_pred_2 %>% group_by(play_key, player_id) %>% slice(1)
+plays_caught_or_not <- catch_prob_plays %>% group_by(play_key) %>% slice(1) %>% dplyr::select(play_key, caught)
+
+baserunner_positions <- player_positions %>% filter(player_id %in% c(11:13))
+baserunner_positions <- baserunner_positions %>% mutate(play_key = paste0(game_string, play_per_game))
+
+fly_ball_events <- ball_events %>% filter(play_key %in% plays_caught_or_not$play_key)
+fly_ball_events <- fly_ball_events %>% left_join(plays_caught_or_not, by = "play_key")
+fly_ball_events <- fly_ball_events %>% left_join(baserunner_positions[,c(3:6,11)], by = c("play_key", "timestamp"), suffix = c("", "_br"))
+
+fly_ball_events <- fly_ball_events %>% group_by(play_key) %>% filter(sum(is.na(player_id_br)) < n())
+
+fly_ball_events <- fly_ball_events %>% ungroup() %>%  mutate(dist_1st = sqrt((field_x - 63.64)^2 + (field_y - 63.64)^2),
+                                                             dist_2nd = sqrt(field_x^2 + (field_y - 127.28)^2),
+                                                             dist_3rd = sqrt((field_x + 63.64)^2 + (field_y - 63.64)^2),
+                                                             dist_home = sqrt(field_x^2 + field_y^2),
+                                                             close = pmin(dist_1st, dist_2nd, dist_3rd, dist_home))
+
+fly_ball_events <- fly_ball_events %>% mutate(closest_base = ifelse(dist_1st == close, 1, 
+                                                                    ifelse(dist_2nd == close, 2,
+                                                                           ifelse(dist_3rd == close, 3, 4)))) %>% relocate(closest_base, .before = dist_1st)
+
+fly_ball_br_events <- fly_ball_events %>% group_by(play_key, player_id_br) %>% slice(c( 1, (n()-1):n() ))
+fly_ball_br_events <- fly_ball_br_events %>% mutate(two_outs = ifelse(caught == 1, ))
+
