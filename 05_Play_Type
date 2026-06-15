@@ -23,5 +23,19 @@ fly_ball_events <- fly_ball_events %>% mutate(closest_base = ifelse(dist_1st == 
                                                                            ifelse(dist_3rd == close, 3, 4)))) %>% relocate(closest_base, .before = dist_1st)
 
 fly_ball_br_events <- fly_ball_events %>% group_by(play_key, player_id_br) %>% slice(c( 1, (n()-1):n() ))
-fly_ball_br_events <- fly_ball_br_events %>% mutate(two_outs = ifelse(caught == 1, ))
+
+
+### this doesn't work, need to figure out way to actually get decent estimate of outs
+potential_tag_up <- fly_ball_br_events %>% filter(caught == 1)
+potential_tag_up <- potential_tag_up %>% group_by(play_key, player_id_br) %>% filter(sum(player_id %in% c(7:9)) < 1)
+potential_tag_up <- potential_tag_up %>% slice(c(1,3)) %>% filter(!is.na(player_id_br))
+
+potential_tag_up <- potential_tag_up %>% mutate(next_play_key = paste0(game_string, play_per_game+1))
+potential_tag_up <- potential_tag_up %>% left_join(lineups[,19:22], by = c("next_play_key" = "play_key"))
+potential_tag_up <- potential_tag_up %>% group_by(play_key, player_id_br) %>% mutate(try_tag = ifelse(first(closest_base) != last(closest_base), 1, 0),
+                                                                                     tag_to = ifelse(try_tag == 1, last(closest_base), 1 + first(closest_base)))
+
+potential_tag_non_home <- potential_tag_up %>% group_by(play_key, player_id_br) %>% filter(tag_to != 4)
+potential_tag_non_home <- potential_tag_non_home %>% mutate(safe_tag = ifelse(try_tag == 0, NA, 
+                                                                              ifelse(tag_to == 2, ifelse(is.na(on_2b), 0, 1))) )
 
