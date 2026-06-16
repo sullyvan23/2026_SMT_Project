@@ -80,10 +80,15 @@ ggplot(tag_up_positions %>% filter(run_field_dist <= 15), aes(x = next_base_dist
 ################################################################################################################################################################################################
 
 
+pot_tag_results <- less_2_outs_caught %>% ungroup() %>% distinct(play_key, game_string, play_per_game, player_id_br)
 
+pot_tag_results <- pot_tag_results %>% left_join(tag_up_positions %>% distinct(play_key, player_id_br, pos_safe_est),
+                                                 by = c("play_key", "player_id_br"))
 
-
-
+pot_tag_results <- pot_tag_results %>% rename(safe_tag = pos_safe_est) %>% 
+                                       mutate(tagged_up = ifelse(is.na(safe_tag), 0, 1),
+                                              successful_tag = ifelse(is.na(safe_tag), 0, safe_tag)) %>%
+                                       relocate(safe_tag, .after = tagged_up)
 
 
 
