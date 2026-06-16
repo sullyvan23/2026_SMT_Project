@@ -91,4 +91,5 @@ pot_tag_results <- pot_tag_results %>% rename(safe_tag = pos_safe_est) %>%
                                        relocate(safe_tag, .after = tagged_up)
 
 
+write.csv(pot_tag_results, "pot_tag_results.csv", row.names = FALSE)
 
