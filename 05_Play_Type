@@ -49,3 +49,18 @@ plot(less_2_outs_caught$og_base_catch_dist, less_2_outs_caught$after_catch_dist)
 
 tagged_up <- less_2_outs_caught %>% filter(after_catch_dist > 0.5)
 stayed_base <- less_2_outs_caught %>% filter(after_catch_dist < 0.5)
+
+##########################################################################################################################################################################
+
+ball_lands_go <- fly_ball_events %>% filter(caught == 0)
+ball_lands_go <- ball_lands_go %>% group_by(play_key, player_id_br) %>% distinct(play_key, player_id_br, original_base)
+
+ball_lands_go <- ball_lands_go %>% left_join(baserunner_positions[,c(3:6,11)], by = c("play_key", "player_id_br" = "player_id"))
+ball_lands_go <- ball_lands_go %>% slice(n())
+
+plot(ball_lands_go$field_x, ball_lands_go$field_y)
+
+ball_lands_go <- ball_lands_go %>% mutate(final_base = case_when(field_y > 100  ~  2,
+                                                                 field_x < -45  ~  3,
+                                                                 TRUE  ~  4)) %>% ungroup() %>% dplyr::select(-c(timestamp:field_y))
+
