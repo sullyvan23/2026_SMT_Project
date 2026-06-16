@@ -62,5 +62,5 @@ plot(ball_lands_go$field_x, ball_lands_go$field_y)
 
 ball_lands_go <- ball_lands_go %>% mutate(final_base = case_when(field_y > 100  ~  2,
                                                                  field_x < -45  ~  3,
-                                                                 TRUE  ~  4)) %>% ungroup() %>% dplyr::select(-c(timestamp:field_y))
-
+                                                                 TRUE  ~  4),
+                                          att_bases_advanced = final_base - original_base) %>% ungroup() %>% dplyr::select(-c(timestamp:field_y))
