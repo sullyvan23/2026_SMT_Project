@@ -79,7 +79,6 @@ ggplot(tag_up_positions %>% filter(run_field_dist <= 15), aes(x = next_base_dist
 
 ################################################################################################################################################################################################
 
-
 pot_tag_results <- less_2_outs_caught %>% ungroup() %>% distinct(play_key, game_string, play_per_game, player_id_br)
 
 pot_tag_results <- pot_tag_results %>% left_join(tag_up_positions %>% distinct(play_key, player_id_br, pos_safe_est),
@@ -93,3 +92,16 @@ pot_tag_results <- pot_tag_results %>% rename(safe_tag = pos_safe_est) %>%
 
 write.csv(pot_tag_results, "pot_tag_results.csv", row.names = FALSE)
 
+################################################################################################################################################################################################
+
+dont_go_caught <- pot_tag_results[,1:5] %>% filter(tagged_up == 0)
+dont_go_caught <- dont_go_caught[,1:4] %>% mutate(original_base = player_id_br - 10)
+
+dont_go_caught <- dont_go_caught %>% mutate(play_key_next = paste0(game_string, play_per_game+1)) %>% 
+                                     left_join(baserunners, by = c("play_key_next" = "play_key"))
+
+dont_go_caught <- dont_go_caught %>% mutate(safe_est = case_when(original_base == 1  ~  first,
+                                                                 original_base == 2  ~  second,
+                                                                 original_base == 3  ~  third))
+
+### no one doubled up from going too far on a pop up
