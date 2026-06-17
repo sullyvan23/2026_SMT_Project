@@ -2,8 +2,6 @@
 ball_positions_2 <- ball_positions %>% mutate(play_key = paste0(game_string, play_per_game))
 player_positions_2 <- player_positions %>% mutate(play_key = paste0(game_string, play_per_game))
 
-tag_up_pos_save <- tag_up_positions
-
 tag_up_positions <- tagged_up %>% ungroup() %>% distinct(play_key, game_string, play_per_game, player_id_br, original_base)
 tag_up_positions <- tag_up_positions %>% rename(next_base = original_base) %>% mutate(next_base = next_base + 1)
 
@@ -49,7 +47,7 @@ baserunners <- baserunner_positions %>% distinct(play_key, player_id) %>% group_
                                                   third = sum(player_id == 13))
 
 tag_up_positions <- tag_up_positions %>% mutate(play_key_next = paste0(game_string, play_per_game+1)) %>% 
-                                         left_join(baserunners[,c(1,3:4)], by = c("play_key_next" = "play_key"))
+                                         left_join(baserunners, by = c("play_key_next" = "play_key"))
 
 tag_up_positions <- tag_up_positions %>% mutate(safe_est = case_when(next_base == 2  ~  second,
                                                                      next_base == 3  ~  third,
@@ -73,7 +71,7 @@ tag_up_positions <- tag_up_positions %>% group_by(play_key, player_id_br) %>% mu
                                          })
 
 
-tag_up_positions <- tag_up_positions%>% mutate(pos_safe_est = ifelse(sum(runner_within_3 == 0  &  run_field_dist < 4, na.rm = TRUE) > 0, 0, 1))
+tag_up_positions <- tag_up_positions %>% mutate(pos_safe_est = ifelse(sum(runner_within_3 == 0  &  run_field_dist < 4, na.rm = TRUE) > 0, 0, 1))
 
 ggplot(tag_up_positions %>% filter(run_field_dist <= 15), aes(x = next_base_dist, y = run_field_dist, color = pos_safe_est)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
