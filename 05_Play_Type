@@ -53,7 +53,7 @@ stayed_base <- less_2_outs_caught %>% filter(after_catch_dist < 0.5)
 ##########################################################################################################################################################################
 
 ball_lands_go <- fly_ball_events %>% filter(caught == 0)
-ball_lands_go <- ball_lands_go %>% group_by(play_key, player_id_br) %>% distinct(play_key, player_id_br, original_base)
+ball_lands_go <- ball_lands_go %>% group_by(play_key, player_id_br) %>% distinct(play_key, game_string, play_per_game, player_id_br, original_base)
 
 ball_lands_go <- ball_lands_go %>% left_join(baserunner_positions[,c(3:6,11)], by = c("play_key", "player_id_br" = "player_id"))
 ball_lands_go <- ball_lands_go %>% slice(n())
