@@ -44,10 +44,12 @@ tag_up_positions <- tag_up_positions %>% mutate(run_field_dist = sqrt((field_x_r
 
 
 baserunners <- baserunner_positions %>% distinct(play_key, player_id) %>% group_by(play_key) %>%
-                                        summarise(second = sum(player_id == 12), third = sum(player_id == 13))
+                                        summarise(first = sum(player_id == 11),
+                                                  second = sum(player_id == 12), 
+                                                  third = sum(player_id == 13))
 
 tag_up_positions <- tag_up_positions %>% mutate(play_key_next = paste0(game_string, play_per_game+1)) %>% 
-                                         left_join(baserunners, by = c("play_key_next" = "play_key"))
+                                         left_join(baserunners[,c(1,3:4)], by = c("play_key_next" = "play_key"))
 
 tag_up_positions <- tag_up_positions %>% mutate(safe_est = case_when(next_base == 2  ~  second,
                                                                      next_base == 3  ~  third,
