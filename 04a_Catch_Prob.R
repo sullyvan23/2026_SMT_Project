@@ -195,6 +195,8 @@ catch_prob_model_2 <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle
 
 catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
 
+write.csv(catch_prob_all_time_pred_2, "catch_prob_all_time_pred_2.csv", row.names = FALSE)
+
 
 catch_correlations <- round(cor(catch_prob_all_time_pred_2[,3:45] , (catch_prob_all_time_pred_2$caught - catch_prob_all_time_pred_2$catch_prob) ), 3)
                                 
@@ -281,4 +283,6 @@ logLoss(catch_prob_all_time_pred_4$caught, catch_prob_all_time_pred_4$smooth_cat
 
 
 caught <- catch_prob_all_time_pred_4 %>% filter(caught == 1) %>% group_by(play_key, player_id) %>% filter(row_number() == 1)
+
+
 
