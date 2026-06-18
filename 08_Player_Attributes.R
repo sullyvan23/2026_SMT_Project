@@ -1,3 +1,4 @@
+library(dplyr)
 library(tidyr)
 
 lineups_pivoted <- lineups %>% pivot_longer(cols = pitcher:on_3b,
