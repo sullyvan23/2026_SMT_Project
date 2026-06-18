@@ -51,6 +51,42 @@ write.csv(player_speed, "player_speed.csv", row.names = FALSE)
 
 ################################################################################################################################################################################
 
+ball_pos_throws <- ball_positions_2 %>% left_join(ball_events[,1:5] %>% filter(ball_eventcode %in% c(3,8), player_id %in% c(7:9)), 
+                                                  by = c("game_string", "play_per_game", "timestamp"))
+ball_pos_throws <- ball_pos_throws %>% group_by(play_key) %>% filter(sum(is.na(ball_eventcode)) < n())
+
+ball_pos_throws <- ball_pos_throws %>% mutate(throw_row = which(ball_eventcode %in% c(3,8))[1]) %>% 
+                                       filter(row_number() >= throw_row, row_number() <= throw_row+10)
+
+ball_pos_throws <- ball_pos_throws %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id"))
+ball_pos_throws <- ball_pos_throws %>% filter(sum(!is.na(player_code)) == 1)
+
+ball_pos_throws <- ball_pos_throws %>% mutate(x_velo = 0.68181818 * (ball_position_x - lag(ball_position_x)) / ((timestamp - lag(timestamp))/1000),
+                                              y_velo = 0.68181818 * (ball_position_y - lag(ball_position_y)) / ((timestamp - lag(timestamp))/1000),
+                                              z_velo = 0.68181818 * (ball_position_z - lag(ball_position_z)) / ((timestamp - lag(timestamp))/1000),
+                                              speed = sqrt(x_velo^2 + y_velo^2 + z_velo^2))
+
+ball_pos_throws <- ball_pos_throws %>% mutate(player_id = first(player_id),
+                                              player_code = first(player_code)) %>% slice(2)
+ball_pos_throws <- ball_pos_throws %>% filter(speed >= 80, speed <= 106)
+
+
+throw_speed <- ball_pos_throws %>% group_by(player_code) %>%
+                                   summarise(speed_95 = quantile(speed, probs = 0.95, na.rm = TRUE),
+                                             count = n())
+throw_speed <- throw_speed %>% mutate(team = substr(player_code, 1, 3)) %>%
+                               filter(team %in% c("ANI", "ARN", "PHD", "VAS"))
+
+throw_speed <- throw_speed %>% filter(count >= 3)
+
+write.csv(throw_speed, "throw_speed.csv", row.names = FALSE)
+
+
+
+
+
+
+
 
 
 
