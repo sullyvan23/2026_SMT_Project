@@ -25,8 +25,8 @@ player_pos_speeds <- player_pos_speeds %>% arrange(play_key, player_id, timestam
 
 player_pos_speeds <- player_pos_speeds %>% mutate(x_velo = 0.68181818 * (field_x - lag(field_x)) / ((timestamp - lag(timestamp))/1000),
                                                   y_velo = 0.68181818 * (field_y - lag(field_y)) / ((timestamp - lag(timestamp))/1000),
-                                                  speed = sqrt(x_velo^2 + y_velo^2),
-                                                  x_accel = 0.68181818 * (x_velo - lag(x_velo)) / ((timestamp - lag(timestamp))/1000),
+                                                  speed = sqrt(x_velo^2 + y_velo^2))
+player_pos_speeds <- player_pos_speeds %>% mutate(x_accel = 0.68181818 * (x_velo - lag(x_velo)) / ((timestamp - lag(timestamp))/1000),
                                                   y_accel = 0.68181818 * (y_velo - lag(y_velo)) / ((timestamp - lag(timestamp))/1000),
                                                   tang_accel = 0.68181818 * (speed - lag(speed)) / ((timestamp - lag(timestamp))/1000),
                                                   accel_mag = sqrt(x_accel^2 + y_accel^2))
