@@ -32,7 +32,24 @@ player_pos_speeds <- player_pos_speeds %>% mutate(x_accel = 0.68181818 * (x_velo
                                                   tang_accel = 0.68181818 * (speed - lag(speed)) / ((timestamp - lag(timestamp))/1000),
                                                   accel_mag = sqrt(x_accel^2 + y_accel^2))
 
+player_pos_speeds <- player_pos_speeds %>% filter(speed < 25, accel_mag < 25)
 
+
+
+player_speed <- player_pos_speeds %>% filter(speed >= 10) %>% group_by(player_code) %>%
+                                     summarise(speed_95 = quantile(speed, probs = 0.95, na.rm = TRUE),
+                                               count = n())
+player_speed <- player_speed %>% mutate(team = substr(player_code, 1, 3)) %>%
+                                 filter(team %in% c("ANI", "ARN", "PHD", "VAS"))
+
+plot(player_speed$count, player_speed$speed_95)
+
+player_speed <- player_speed %>% filter(count > 2500)
+
+
+write.csv(player_speed, "player_speed.csv", row.names = FALSE)
+
+################################################################################################################################################################################
 
 
 
