@@ -32,7 +32,8 @@ player_pos_speeds <- player_pos_speeds %>% mutate(x_accel = 0.68181818 * (x_velo
                                                   tang_accel = 0.68181818 * (speed - lag(speed)) / ((timestamp - lag(timestamp))/1000),
                                                   accel_mag = sqrt(x_accel^2 + y_accel^2))
 
-save.image("save.Rdata")
+
+
 
 
 
