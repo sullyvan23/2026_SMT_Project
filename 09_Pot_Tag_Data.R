@@ -25,3 +25,38 @@ pot_tag_data <- pot_tag_data %>% mutate(ground_next_x_dist = ground_x - next_bas
                                         br_og_dist = sqrt(br_og_x_dist^2 + br_og_y_dist^2))
 
 
+pot_tag_data <- pot_tag_data %>% mutate(OF_ball_next_front_dist = -((OF_ball_x_dist * ground_next_x_dist) + (OF_ball_y_dist * ground_next_y_dist)) / 
+                                                                  ground_next_dist)
+pot_tag_data <- pot_tag_data %>% mutate(OF_ball_next_angle = acos(-OF_ball_next_front_dist / OF_ball_dist))
+pot_tag_data <- pot_tag_data %>% mutate(unit_x = ground_next_x_dist / ground_next_dist,
+                                        unit_y = ground_next_y_dist / ground_next_dist,
+                                        OF_ball_next_side_dist = OF_ball_dist * sin(OF_ball_next_angle),
+                                        pos_next_side_diff = abs( (field_x + (OF_ball_next_front_dist * -unit_x) + (OF_ball_next_side_dist * unit_y)) - ground_x ),
+                                        neg_next_side_diff = abs( (field_x + (OF_ball_next_front_dist * -unit_x) + (OF_ball_next_side_dist * -unit_y)) - ground_x ),
+                                        OF_ball_next_side_dist = ifelse(pos_next_side_diff < neg_next_side_diff,
+                                                                   OF_ball_next_side_dist, -OF_ball_next_side_dist)) %>% 
+                                 dplyr::select(-c(unit_x, unit_y, pos_next_side_diff, neg_next_side_diff)) %>%
+                                 relocate(OF_ball_next_side_dist, .before = OF_ball_next_angle)
+pot_tag_data <- pot_tag_data %>% mutate(OF_ball_next_angle = atan2(OF_ball_next_side_dist, OF_ball_next_front_dist))
+
+
+pot_tag_data <- pot_tag_data %>% mutate(velo_next_towards = -((x_velo * ground_next_x_dist) + (y_velo * ground_next_y_dist)) / 
+                                                             ground_next_dist)
+pot_tag_data <- pot_tag_data %>% mutate(velo_next_angle = acos(velo_next_towards / speed))
+pot_tag_data <- pot_tag_data %>% mutate(unit_x = ground_next_x_dist / ground_next_dist,
+                                        unit_y = ground_next_y_dist / ground_next_dist,
+                                        velo_next_side = speed * sin(velo_next_angle),
+                                        pos_side_diff = abs( ((velo_next_towards * unit_x) + (velo_next_side * unit_y)) - x_velo ),
+                                        neg_side_diff = abs( ((velo_next_towards * unit_x) + (velo_next_side * -unit_y)) - x_velo ),
+                                        velo_next_side = ifelse(pos_side_diff < neg_side_diff,
+                                                              velo_next_side, -velo_next_side)) %>% 
+                                 dplyr::select(-c(unit_x, unit_y, pos_side_diff, neg_side_diff)) %>%
+                                 relocate(velo_next_side, .before = velo_next_angle)
+pot_tag_data <- pot_tag_data %>% mutate(velo_next_angle = atan2(velo_next_side, velo_next_towards))
+
+
+
+
+
+
+
