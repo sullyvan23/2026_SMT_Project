@@ -89,6 +89,12 @@ pot_tag_results <- pot_tag_results %>% rename(safe_tag = pos_safe_est) %>%
                                               successful_tag = ifelse(is.na(safe_tag), 0, safe_tag)) %>%
                                        relocate(safe_tag, .after = tagged_up)
 
+pot_tag_results <- pot_tag_results %>% left_join(baserunners, by = "play_key")
+pot_tag_results <- pot_tag_results %>% mutate(runner_front = case_when(player_id_br == 11  ~  second,
+                                                                       player_id_br == 12  ~  third,
+                                                                       player_id_br == 13  ~  0)) %>%
+                                       dplyr::select(-c(first:third))
+
 
 write.csv(pot_tag_results, "pot_tag_results.csv", row.names = FALSE)
 
