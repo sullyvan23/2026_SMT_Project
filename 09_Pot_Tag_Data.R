@@ -55,6 +55,15 @@ pot_tag_data <- pot_tag_data %>% mutate(unit_x = ground_next_x_dist / ground_nex
 pot_tag_data <- pot_tag_data %>% mutate(velo_next_angle = atan2(velo_next_side, velo_next_towards))
 
 
+pot_tag_data <- pot_tag_data %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"),
+                                           suffix = c("", "_br"))
+pot_tag_data <- pot_tag_data %>% group_by(play_key, player_id_br, timestamp) %>% 
+                                 mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
+                                 slice(1)
+
+
+
+
 
 
 
