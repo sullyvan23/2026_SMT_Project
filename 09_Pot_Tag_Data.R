@@ -17,12 +17,15 @@ pot_tag_data <- pot_tag_data %>% mutate(og_base_x = case_when(player_id_br == 11
                                                                 player_id_br == 13  ~  0.71))
 
 
-pot_tag_data <- pot_tag_data %>% mutate(ground_next_x_dist = ground_x - next_base_x,
+pot_tag_data <- pot_tag_data %>% group_by(play_key, player_id_br, player_id) %>%
+                                 mutate(ground_next_x_dist = ground_x - next_base_x,
                                         ground_next_y_dist = ground_y - next_base_y,
                                         ground_next_dist = sqrt(ground_next_x_dist^2 + ground_next_y_dist^2),
                                         br_og_x_dist = field_x_br - og_base_x,
                                         br_og_y_dist = field_y_br - og_base_y,
-                                        br_og_dist = sqrt(br_og_x_dist^2 + br_og_y_dist^2))
+                                        br_og_dist = sqrt(br_og_x_dist^2 + br_og_y_dist^2),
+                                        br_og_speed = 0.68181818 * (br_og_dist - lag(br_og_dist)) / ((timestamp - lag(timestamp))/1000),
+                                        br_og_speed = ifelse(is.na(br_og_speed), lead(br_og_speed), br_og_speed))
 
 
 pot_tag_data <- pot_tag_data %>% mutate(OF_ball_next_front_dist = -((OF_ball_x_dist * ground_next_x_dist) + (OF_ball_y_dist * ground_next_y_dist)) / 
