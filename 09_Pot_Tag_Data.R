@@ -54,6 +54,7 @@ pot_tag_data <- pot_tag_data %>% mutate(unit_x = ground_next_x_dist / ground_nex
                                  relocate(velo_next_side, .before = velo_next_angle)
 pot_tag_data <- pot_tag_data %>% mutate(velo_next_angle = atan2(velo_next_side, velo_next_towards))
 
+####################################################################################################################################################################################
 
 pot_tag_data <- pot_tag_data %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"))
 pot_tag_data <- pot_tag_data %>% group_by(play_key, player_id_br, timestamp) %>% 
