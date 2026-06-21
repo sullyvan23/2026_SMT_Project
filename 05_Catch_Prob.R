@@ -103,6 +103,11 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(time_left >= 0)
 
 #####################################################################################################################################################################
 
+
+check <- catch_prob_all_time_2 %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"))
+
+#####################################################################################################################################################################
+
 lagged_player_movement <- catch_prob_all_time_2 %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n()) %>% select(OF_ball_dist, OF_ball_angle, time_left, caught)
 
 hist(lagged_player_movement$OF_ball_dist, breaks = 100)
