@@ -182,10 +182,12 @@ catch_prob_folds_4 <- groupKFold(catch_prob_all_time_3$play_key, k = 2)
 act <- c()
 pred <- c()
 for(fold in catch_prob_folds_4) {
+  print("a")
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
   model <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) +
-               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
+               s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
+               s(speed_95, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
