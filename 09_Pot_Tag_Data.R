@@ -56,18 +56,14 @@ pot_tag_data <- pot_tag_data %>% mutate(velo_next_angle = atan2(velo_next_side, 
 
 ####################################################################################################################################################################################
 
-pot_tag_data <- pot_tag_data %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"))
+pot_tag_data <- pot_tag_data %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"),
+                                           suffix = c("_of", "_br"))
 pot_tag_data <- pot_tag_data %>% group_by(play_key, player_id_br, timestamp) %>% 
-                                 mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
+                                 mutate(player_code_br = ifelse(first(player_code_br) != last(player_code_br), NA, player_code_br)) %>%
                                  slice(1)
 
-pot_tag_data <- pot_tag_data %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_down" = "player_id"),
-                                           suffix = c("_br", "_of"))
-pot_tag_data <- pot_tag_data %>% group_by(play_key, player_id_br, timestamp) %>% 
-                                 mutate(player_code_of = ifelse(first(player_code_of) != last(player_code_of), NA, player_code_of)) %>%
-                                 slice(1)
-
-pot_tag_data <- pot_tag_data %>% left_join(player_speed[,1:2], by = c("player_code_br" = "player_code"))
+pot_tag_data <- pot_tag_data %>% left_join(player_speed[,1:2], by = c("player_code_br" = "player_code"),
+                                           suffix = c("_of", ""))
 pot_tag_data <- pot_tag_data %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95))
 
 pot_tag_data <- pot_tag_data %>% left_join(throw_speed[,1:2], by = c("player_code_of" = "player_code"),
