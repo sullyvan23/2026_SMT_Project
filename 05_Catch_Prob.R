@@ -1,6 +1,7 @@
 library(dplyr)
 library(mgcv)
 library(caret)
+library(Metrics)
 
 catch_prob_all_time <- catch_prob_fbs[,c(1:8,17,19,45)] %>% left_join(fly_balls[,5:7], by = "play_key")
 catch_prob_all_time <- catch_prob_all_time %>% mutate(timestamp_ground = timestamp_hit + (1000*time_to_ground))
@@ -113,16 +114,6 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(!(play_key %in% lagged
 
 #####################################################################################################################################################################
 
-catch_prob_all_time_2 <- catch_prob_all_time_2 %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id"))
-catch_prob_all_time_2 <- catch_prob_all_time_2 %>% group_by(play_key, player_id, timestamp) %>% 
-                                                   mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
-                                                   slice(1)
-
-catch_prob_all_time_2 <- catch_prob_all_time_2 %>% ungroup() %>% left_join(player_speed[,1:2], by = "player_code")
-catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95))
-
-#####################################################################################################################################################################
-
 set.seed(279)
 catch_prob_folds_2 <- createFolds(catch_prob_all_time_2$caught, k = 2)
 
@@ -175,6 +166,21 @@ catch_prob_all_time_3 <- catch_prob_all_time_2 %>% left_join(ball_need_positions
 catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(xyz_ball_dist = sqrt((pred_x - ball_position_x)^2 + (pred_y - ball_position_y)^2 + (ball_position_z - 3)^2) ) %>% 
                                                    filter(!is.na(xyz_ball_dist))
 
+library(dplyr)
+library(mgcv)
+library(caret)
+library(Metrics)
+
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id"))
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% group_by(play_key, player_id, timestamp) %>% 
+                                                   mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
+                                                   slice(1)
+
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% ungroup() %>% left_join(player_speed[,1:2], by = "player_code")
+catch_prob_all_time_3 <- catch_prob_all_time_3 %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95))
+
+#####################################################################################################################################################################
+
 
 set.seed(108)
 catch_prob_folds_4 <- groupKFold(catch_prob_all_time_3$play_key, k = 2)
@@ -185,7 +191,7 @@ for(fold in catch_prob_folds_4) {
   print("a")
   train <- catch_prob_all_time_3[-fold, ]
   test <- catch_prob_all_time_3[fold, ]
-  model <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) +
+  model <- bam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) +
                s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
                s(speed_95, k = 3), 
                family = binomial, data = train)
@@ -198,8 +204,9 @@ logLoss(act, pred)
 plot(model, page=1)
 
 
-catch_prob_model_2 <- gam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) + 
-                          s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3), 
+catch_prob_model_2 <- bam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) + 
+                          s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
+                          s(speed_95, k = 3), 
                           family = binomial, data = catch_prob_all_time_3)
 
 catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
