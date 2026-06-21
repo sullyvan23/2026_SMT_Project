@@ -103,11 +103,6 @@ catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(time_left >= 0)
 
 #####################################################################################################################################################################
 
-
-check <- catch_prob_all_time_2 %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id_br" = "player_id"))
-
-#####################################################################################################################################################################
-
 lagged_player_movement <- catch_prob_all_time_2 %>% group_by(play_key, player_id) %>% filter(caught == 1, row_number() == n()) %>% select(OF_ball_dist, OF_ball_angle, time_left, caught)
 
 hist(lagged_player_movement$OF_ball_dist, breaks = 100)
@@ -116,8 +111,15 @@ lagged_player_movement <- lagged_player_movement %>% filter(OF_ball_dist > 16)
 
 catch_prob_all_time_2 <- catch_prob_all_time_2 %>% filter(!(play_key %in% lagged_player_movement$play_key))
 
+#####################################################################################################################################################################
 
-save.image("save.Rdata")
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% left_join(lineups_pivoted[,9:11], by = c("play_key", "player_id"))
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% group_by(play_key, player_id, timestamp) %>% 
+                                                   mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
+                                                   slice(1)
+
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% ungroup() %>% left_join(player_speed[,1:2], by = "player_code")
+catch_prob_all_time_2 <- catch_prob_all_time_2 %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95))
 
 #####################################################################################################################################################################
 
