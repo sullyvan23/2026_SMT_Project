@@ -179,9 +179,7 @@ pot_tag_up <- pot_tag_up %>% ungroup() %>%
                              mutate(next_run_dist = case_when(player_id_br == 11  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
                                                               player_id_br == 12  ~  sqrt((field_x_runner - x_3b)^2 + (field_y_runner - y_3b)^2),
                                                               player_id_br == 13  ~  sqrt((field_x_runner - x_home)^2 + (field_y_runner - y_home)^2)),
-                                    run_field_dist = case_when(player_id_br == 11  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
-                                                               player_id_br == 12  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
-                                                               player_id_br == 13  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2)),
+                                    run_field_dist = sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
                                     safe_est = case_when(player_id_br == 11  ~ ifelse(is.na(second), 0.5, second),
                                                          player_id_br == 12  ~  ifelse(is.na(third), 0.5, third),
                                                          player_id_br == 13  ~  0.5))
