@@ -13,7 +13,7 @@ ball_caught <- ball_caught %>% mutate(time_air = (last(timestamp) - first(timest
 ball_caught <- ball_caught %>% left_join(ball_positions[,1:6], by = c("game_string", "play_per_game", "timestamp"))
 ball_caught <- ball_caught %>% filter(!is.na(ball_position_y)) %>%
                                mutate(ball_distance = sqrt(ball_position_x^2 + ball_position_y^2))
-ball_caught <- ball_caught %>% filter(time_air >= 2)
+ball_caught <- ball_caught %>% filter(time_air >= 2, abs(ball_position_x) <= ball_position_y, ball_distance >= 155)
 
 ### half inning
 ball_caught <- ball_caught %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "play_per_game")) %>% relocate(half_inning, .after = play_per_game)
@@ -95,7 +95,8 @@ ggplot(less_2_outs_caught, aes(x = og_base_dist, y = after_catch_dist, color = n
 
 ##############################################################################################################################################################################################
 
-baserunners_less2 <- less_2_outs_caught[,-4] %>% left_join(player_positions[,1:6] %>% filter(player_id %in% c(11:13)),
+baserunners_less2 <- less_2_outs_caught[,-4] %>% distinct() %>%
+                                                 left_join(player_positions[,1:6] %>% filter(player_id %in% c(11:13)),
                                                            by = c("game_string", "play_per_game", "player_id_br" = "player_id"))
 baserunners_less2 <- baserunners_less2 %>% left_join(ball_events[,1:5], by = c("game_string", "play_per_game", "timestamp"),
                                                      suffix = c("_br", ""))
@@ -115,7 +116,7 @@ baserunners_less2 <- baserunners_less2 %>% group_by(game_string, play_per_game, 
                                                   .x$player_id[i] = .x$player_id[i-1]
                                                 }
   
-                                                if(.x$ball_eventcode[i] %in% c(3,8,9,10,16)) {
+                                                if(.x$ball_eventcode[i] %in% c(3,5,8,9,10,16)) {
                                                   .x$ball_possessed[i] = 0
                                                   .x$player_id[i] = NA
                                                 }
@@ -132,12 +133,116 @@ baserunners_less2 <- baserunners_less2 %>% mutate(final_dist = case_when(player_
                                                                          player_id_br == 12  ~  basepath_end - 2,
                                                                          player_id_br == 13  ~  basepath_end - 3))
 
+baserunners_less2 <- baserunners_less2 %>% left_join(baserunners, by = c("game_string", "next_play" = "play_per_game"))
 
 pot_tag_up <- baserunners_less2 %>% filter(after_catch_dist >= 0.3)
 going_back <- baserunners_less2 %>% filter(after_catch_dist < 0.3)
 
+##############################################################################################################################################################################################
+
+going_back <- going_back %>% ungroup() %>%
+                             mutate(og_run_dist = case_when(player_id_br == 11  ~  sqrt((field_x_runner - x_1b)^2 + (field_y_runner - y_1b)^2),
+                                                            player_id_br == 12  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
+                                                            player_id_br == 13  ~  sqrt((field_x_runner - x_3b)^2 + (field_y_runner - y_3b)^2)),
+                                    og_field_dist = case_when(player_id_br == 11  ~  sqrt((field_x_fielder - x_1b)^2 + (field_y_fielder - y_1b)^2),
+                                                              player_id_br == 12  ~  sqrt((field_x_fielder - x_2b)^2 + (field_y_fielder - y_2b)^2),
+                                                              player_id_br == 13  ~  sqrt((field_x_fielder - x_3b)^2 + (field_y_fielder - y_3b)^2)),
+                                    safe_est = case_when(player_id_br == 11  ~ ifelse(is.na(first), 0.5, first),
+                                                         player_id_br == 12  ~  ifelse(is.na(second), 0.5, second),
+                                                         player_id_br == 13  ~  ifelse(is.na(third), 0.5, third)))
+
+going_back <- going_back %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
+                             group_modify(~{
+                               for(i in 2:nrow(.x)) {
+                                  
+                                  if(.x$og_run_dist[i] <= 4  |  .x$runner_within_4[i-1] == 1) {
+                                    .x$runner_within_4[i] = 1
+                                  }
+                               }
+                               
+                               .x
+                             })
+
+going_back <- going_back %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  og_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
+
+ggplot(going_back %>% filter(og_field_dist < 10), aes(x = og_run_dist, y = og_field_dist, color = pos_safe_est)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+going_back_results <- going_back %>% summarise(og_base_dist = first(og_base_dist),
+                                               after_catch_dist = first(after_catch_dist),
+                                               safe_back = first(pos_safe_est))
 
 ##############################################################################################################################################################################################
+
+pot_tag_up <- pot_tag_up %>% ungroup() %>%
+                             mutate(next_run_dist = case_when(player_id_br == 11  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
+                                                              player_id_br == 12  ~  sqrt((field_x_runner - x_3b)^2 + (field_y_runner - y_3b)^2),
+                                                              player_id_br == 13  ~  sqrt((field_x_runner - x_home)^2 + (field_y_runner - y_home)^2)),
+                                    run_field_dist = case_when(player_id_br == 11  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
+                                                               player_id_br == 12  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
+                                                               player_id_br == 13  ~  sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2)),
+                                    safe_est = case_when(player_id_br == 11  ~ ifelse(is.na(second), 0.5, second),
+                                                         player_id_br == 12  ~  ifelse(is.na(third), 0.5, third),
+                                                         player_id_br == 13  ~  0.5))
+
+pot_tag_up <- pot_tag_up %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
+                             group_modify(~{
+                               for(i in 2:nrow(.x)) {
+                                  
+                                  if(.x$next_run_dist[i] <= 4  |  .x$runner_within_4[i-1] == 1) {
+                                    .x$runner_within_4[i] = 1
+                                  }
+                               }
+                               
+                               .x
+                             })
+
+pot_tag_up <- pot_tag_up %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  run_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
+
+ggplot(pot_tag_up %>% filter(run_field_dist < 10), aes(x = next_run_dist, y = run_field_dist, color = safe_est)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+pot_tag_up_results <- pot_tag_up %>% summarise(og_base_dist = first(og_base_dist),
+                                               after_catch_dist = first(after_catch_dist),
+                                               final_dist = first(final_dist),
+                                               safe_tag = first(pos_safe_est))
+
+
+
+tag_check <- pot_tag_up %>% left_join(ball_caught[,c(1:2,4)], by = c("game_string", "play_per_game"), suffix = c("", "_caught"))
+tag_check <- tag_check %>% filter(timestamp >= (timestamp_caught - 500))
+tag_check <- tag_check %>% group_by(game_string, play_per_game, player_id_br) %>% 
+                           summarise(max_next_run_dist = max(next_run_dist))
+
+
+pot_tag_up_results <- pot_tag_up_results %>% left_join(tag_check, by = c("game_string", "play_per_game", "player_id_br"))
+pot_tag_up_results <- pot_tag_up_results %>% filter(max_next_run_dist > 82) %>% select(-max_next_run_dist)
+
+##############################################################################################################################################################################################
+
+doubled_up_results <- going_back_results[,c(1:3,6)]
+
+tag_results <- bind_rows(pot_tag_up_results[,c(1:3,7)], going_back_results[,1:3])
+tag_results <- tag_results %>% mutate(att_tag = ifelse(is.na(safe_tag), 0, 1),
+                                      succ_tag = ifelse(is.na(safe_tag), 0, safe_tag)) %>%
+                               relocate(att_tag, .before = safe_tag)
+
+write.csv(doubled_up_results, "doubled_up_results.csv", row.names = FALSE)
+write.csv(tag_results, "tag_results.csv", row.names = FALSE)
+
+##############################################################################################################################################################################################
+
+
+
+
+
+
+
+
+
+
 
 
 
