@@ -17,7 +17,7 @@ ball_caught <- ball_caught %>% filter(time_air >= 2, abs(ball_position_x) <= bal
 
 ### half inning
 ball_caught <- ball_caught %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "play_per_game")) %>% relocate(half_inning, .after = play_per_game)
-
+ball_caught <- ball_caught %>% distinct(game_string, play_per_game, .keep_all = TRUE)
 
 ##############################################################################################################################################################################################
 
