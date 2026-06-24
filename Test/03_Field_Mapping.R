@@ -35,38 +35,25 @@ plot(wall_VAS$spray_angle, wall_VAS$home_dist)
 
 ####################################################################################################################################################################################
 
-knn <- train.kknn(
-  ball_position_z ~ ball_position_x + ball_position_y,
-  data = bounces_VAS,
-  kmax = 500,
-  kernel = "optimal"
-)
-knn$best.parameters$k
-
-
-ground_ANI_model <- kknn(ball_position_z ~ ball_position_x + ball_position_y,
-                        train = bounces_ANI,
-                        test = bounces_ANI,
-                        k = 211,
-                        kernel = "optimal")
+ground_ANI_model <- train.kknn(ball_position_z ~ ball_position_x + ball_position_y,
+                              data = bounces_ANI,
+                              kmax = 500,
+                              kernel = "optimal")
   
-ground_ARN_model <- kknn(ball_position_z ~ ball_position_x + ball_position_y,
-                        train = bounces_ARN,
-                        test = bounces_ARN,
-                        k = 134,
-                        kernel = "optimal")
+ground_ARN_model <- train.kknn(ball_position_z ~ ball_position_x + ball_position_y,
+                              data = bounces_ARN,
+                              kmax = 500,
+                              kernel = "optimal")
 
-ground_PHD_model <- kknn(ball_position_z ~ ball_position_x + ball_position_y,
-                        train = bounces_PHD,
-                        test = bounces_PHD,
-                        k = 163,
-                        kernel = "optimal")
+ground_PHD_model <- train.kknn(ball_position_z ~ ball_position_x + ball_position_y,
+                              data = bounces_PHD,
+                              kmax = 500,
+                              kernel = "optimal")
 
-ground_VAS_model <- kknn(ball_position_z ~ ball_position_x + ball_position_y,
-                        train = bounces_VAS,
-                        test = bounces_VAS,
-                        k = 41,
-                        kernel = "optimal")
+ground_VAS_model <- train.kknn(ball_position_z ~ ball_position_x + ball_position_y,
+                              data = bounces_VAS,
+                              kmax = 500,
+                              kernel = "optimal")
 
 
 ggplot(bounces_VAS, aes(x = ball_position_x, y = ball_position_y, color = predict(ground_VAS_model, newdata = bounces_VAS))) + 
