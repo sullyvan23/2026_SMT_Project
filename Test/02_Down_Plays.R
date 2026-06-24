@@ -15,12 +15,12 @@ ball_down <- ball_down %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "
 
 ##############################################################################################################################################################################################
 
-
 ### baserunner positions
-baserunners_down <- ball_down[,1:3] %>% left_join(player_positions[,1:6] %>% filter(player_id %in% c(11:13)),
+baserunners_down <- ball_down[,1:3] %>% distinct() %>%
+                                        left_join(player_positions[,1:6] %>% filter(player_id %in% c(11:13)),
                                                   by = c("game_string", "play_per_game"))
 baserunners_down <- baserunners_down %>% filter(!is.na(timestamp))
-baserunners_down <- baserunners_down %>% left_join(ball_events[,1:5], by = c("game_string", "play_per_game", "timestamp"),
+baserunners_down <- baserunners_down %>% left_join(ball_events[,1:5] %>% distinct(), by = c("game_string", "play_per_game", "timestamp"),
                                                        suffix = c("_br", ""))
 
 
@@ -57,14 +57,94 @@ baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, pl
                                                                        last(basepath) < 3.25 & last(basepath) >= 2.5  ~  3,
                                                                        TRUE  ~  4))
 
+##############################################################################################################################################################################################
+
+baserunners_down <- baserunners_down %>% left_join(ball_events[,1:5], by = c("game_string", "play_per_game", "timestamp"),
+                                                   suffix = c("_br", ""))
+
+baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, player_id_br) %>% 
+                                         mutate(ball_possessed = 0, 
+                                                ball_eventcode = ifelse(is.na(ball_eventcode), " ", ball_eventcode)) %>%
+                                         group_modify(~{
+                                           for(i in 2:nrow(.x)) {
+                                              
+                                              if(.x$ball_eventcode[i] %in% c(2,7)) {
+                                                .x$ball_possessed[i] = 1
+                                              }
+  
+                                              if(.x$ball_possessed[i-1] == 1) {
+                                                .x$ball_possessed[i] = 1
+                                                .x$player_id[i] = .x$player_id[i-1]
+                                              }
+  
+                                              if(.x$ball_eventcode[i] %in% c(3,5,8,9,10,16)) {
+                                                .x$ball_possessed[i] = 0
+                                                .x$player_id[i] = NA
+                                              }
+                                             
+                                           }
+                                           
+                                           .x
+                                         })
+baserunners_down <- baserunners_down %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "player_id", "timestamp"), 
+                                                   suffix = c("_runner", "_fielder"))
 
 
+baserunners_down <- baserunners_down %>% left_join(baserunners, by = c("game_string", "play_per_game"))
+baserunners_down <- baserunners_down %>% mutate(force = case_when(player_id_br == 11  ~  ifelse(final_base == 2, 1, 0),
+                                                                  player_id_br == 12  ~  ifelse(first == 1  &  final_base == 3, 1, 0),
+                                                                  player_id_br == 13  ~  ifelse(first+second == 2, 1, 0))) %>%
+                                         select(-c(first:third))
+
+baserunners_down <- baserunners_down %>% mutate(next_play = play_per_game + 1)
+baserunners_down <- baserunners_down %>% left_join(baserunners, by = c("game_string", "next_play" = "play_per_game"))
 
 
+baserunners_down <- baserunners_down %>% ungroup() %>%
+                             mutate(next_run_dist = case_when(final_base == 1  ~  sqrt((field_x_runner - x_1b)^2 + (field_y_runner - y_1b)^2),
+                                                              final_base == 2  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
+                                                              final_base == 3  ~  sqrt((field_x_runner - x_3b)^2 + (field_y_runner - y_3b)^2),
+                                                              final_base == 4  ~  sqrt((field_x_runner - x_home)^2 + (field_y_runner - y_home)^2)),
+                                    run_field_dist = sqrt((field_x_fielder - field_x_runner)^2 + (field_y_fielder - field_y_runner)^2),
+                                    next_field_dist = case_when(final_base == 1  ~  sqrt((field_x_fielder - x_1b)^2 + (field_y_fielder - y_1b)^2),
+                                                                final_base == 2  ~  sqrt((field_x_fielder - x_2b)^2 + (field_y_fielder - y_2b)^2),
+                                                                final_base == 3  ~  sqrt((field_x_fielder - x_3b)^2 + (field_y_fielder - y_3b)^2),
+                                                                final_base == 4  ~  sqrt((field_x_fielder - x_home)^2 + (field_y_fielder - y_home)^2)),
+                                    min_field_dist = ifelse(force == 1, pmin(run_field_dist, next_field_dist), run_field_dist),
+                                    safe_est = case_when(final_base == 1  ~ ifelse(is.na(first), 0.5, first),
+                                                         final_base == 2  ~ ifelse(is.na(second), 0.5, second),
+                                                         final_base == 3  ~  ifelse(is.na(third), 0.5, third),
+                                                         final_base == 4  ~  0.5))
 
 
+baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
+                                         group_modify(~{
+                                           for(i in 2:nrow(.x)) {
+                                              
+                                              if(.x$next_run_dist[i] <= 4  |  .x$runner_within_4[i-1] == 1) {
+                                                .x$runner_within_4[i] = 1
+                                              }
+                                           }
+                                           
+                                           .x
+                                         })
+
+baserunners_down <- baserunners_down %>% mutate(min_field_dist = ifelse(player_id == 10, NA, min_field_dist))
+
+baserunners_down <- baserunners_down %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  min_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
+
+##############################################################################################################################################################################################
+
+ball_down_results <- baserunners_down %>% summarise(force = first(force),
+                                                    final_base = first(final_base),
+                                                    safe_advance = first(pos_safe_est))
+ball_down_results <- ball_down_results %>% mutate(att_bases_advanced = case_when(player_id_br == 11  ~  final_base - 1,
+                                                                                 player_id_br == 12  ~  final_base - 2,
+                                                                                 player_id_br == 13  ~  final_base - 3),
+                                                  succ_bases_advanced = att_bases_advanced + (safe_advance - 1))
 
 
+write.csv(ball_down_results, "ball_down_results.csv", row.names = FALSE)
 
 
 
