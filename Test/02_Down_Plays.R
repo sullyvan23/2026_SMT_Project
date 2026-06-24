@@ -12,6 +12,7 @@ ball_down <- ball_down %>% filter(time_air >= 2, abs(ball_position_x) <= ball_po
 
 ### half inning
 ball_down <- ball_down %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "play_per_game")) %>% relocate(half_inning, .after = play_per_game)
+ball_down <- ball_down %>% distinct(game_string, play_per_game, .keep_all = TRUE)
 
 ##############################################################################################################################################################################################
 
