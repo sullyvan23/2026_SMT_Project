@@ -13,8 +13,9 @@ fly_balls <- fly_balls %>% group_by(home_team) %>%
                                   caught_height = ifelse(caught == 1, caught_height, NA)) %>% ungroup()
 
 
-hist(fly_balls$caught_height, breaks = 100)
+hist(fly_balls$caught_height, breaks = 50)
 ### centered at 6
+### realistic max at 8
 
 ############################################################################################################################################################################################
 
@@ -78,7 +79,7 @@ fly_balls_proj_pos <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
 
 
 group <- 0
-fly_balls_proj_6ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>%
+fly_balls_proj_8ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
                                   message(group/nrow(fly_balls))
                                   
@@ -107,7 +108,7 @@ fly_balls_proj_6ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
                               NA
                             )
 
-                            return(ball_z - (ground + 6))
+                            return(ball_z - (ground + 8))
                           }
 
                          ball_hits_ground_time <- tryCatch({uniroot(ground_dist_function, c(1,9))$root},
@@ -118,10 +119,10 @@ fly_balls_proj_6ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
                           )
 
                           tibble(
-                            time_six_ft = ball_hits_ground_time,
-                            six_ft_x = predict(ball_x_model, newdata = ground_times),
-                            six_ft_y = predict(ball_y_model, newdata = ground_times),
-                            six_ft_z = predict(ball_z_model, newdata = ground_times),
+                            time_eight_ft = ball_hits_ground_time,
+                            eight_ft_x = predict(ball_x_model, newdata = ground_times),
+                            eight_ft_y = predict(ball_y_model, newdata = ground_times),
+                            eight_ft_z = predict(ball_z_model, newdata = ground_times),
                             rmse_x = x_rmse,
                             rmse_y = y_rmse,
                             rmse_z = z_rmse
@@ -132,31 +133,59 @@ fly_balls_proj_6ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
 ############################################################################################################################################################################################
 
 fly_ball_land <- fly_balls %>% left_join(fly_balls_proj_pos, by = c("game_string", "play_per_game"))
-fly_ball_land <- fly_ball_land %>% left_join(fly_balls_proj_6ft, by = c("game_string", "play_per_game"), suffix = c("_ground", "_6ft"))
-fly_ball_land <- fly_ball_land %>% filter(!time_to_ground == -1, !time_six_ft == -1)
+fly_ball_land <- fly_ball_land %>% left_join(fly_balls_proj_8ft, by = c("game_string", "play_per_game"), suffix = c("_ground", "_8ft"))
+fly_ball_land <- fly_ball_land %>% filter(!time_to_ground == -1, !time_eight_ft == -1)
 
-plot(fly_ball_land$time_air, fly_ball_land$time_six_ft)
-fly_ball_land <- fly_ball_land %>% filter(!(time_air > 7 & time_six_ft < 4))
+plot(fly_ball_land$time_air, fly_ball_land$time_eight_ft)
+fly_ball_land <- fly_ball_land %>% filter(!(time_air > 7 & time_eight_ft < 4))
 
 fly_ball_land <- fly_ball_land %>% mutate(ground_dist = sqrt(ground_x^2 + ground_y^2),
-                                          six_ft_dist = sqrt(six_ft_x^2 + six_ft_y^2))
-plot(fly_ball_land$ball_distance, fly_ball_land$six_ft_dist)
+                                          eight_ft_dist = sqrt(eight_ft_x^2 + eight_ft_y^2))
+plot(fly_ball_land$ground_dist, fly_ball_land$eight_ft_dist)
 
 ############################################################################################################################################################################################
 
-could_catch <- fly_ball_land %>% select(game_string, play_per_game, timestamp_hit, player_id, caught, time_six_ft:six_ft_z)
+could_catch <- fly_ball_land %>% select(game_string, play_per_game, timestamp_hit, player_id, caught, time_to_ground:ground_z, time_eight_ft:eight_ft_z)
 could_catch <- could_catch %>% left_join(player_positions[,1:6] %>% filter(player_id %in% c(3:9)),
                                          by = c("game_string", "play_per_game", "timestamp_hit" = "timestamp"),
                                          suffix = c("_event", ""))
 
-could_catch <- could_catch %>% mutate(player_dist = sqrt((field_x - six_ft_x)^2 + (field_y - six_ft_y)^2),
-                                      accel_needed = (2 * player_dist) / time_six_ft^2,
-                                      player_caught = ifelse(caught == 1  &  player_id_event == player_id, 1, 0))
+could_catch <- could_catch %>% mutate(ground_dist = sqrt((field_x - ground_x)^2 + (field_y - ground_y)^2),
+                                      eight_ft_dist = sqrt((field_x - eight_ft_x)^2 + (field_y - eight_ft_y)^2),
+                                      OF = ifelse(player_id >= 7, 1, 0),
+                                      player_caught = ifelse(caught == 1  &  player_id_event == player_id, 1, 0)) %>%
+                               filter(!is.na(player_id))
 
-plot(could_catch$accel_needed, could_catch$player_caught)
+ggplot(could_catch, aes(x = ground_dist, y = time_to_ground, color = player_caught)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
 
-could_catch <- could_catch %>% group_by(game_string, play_per_game) %>%
-                               filter(accel_needed < 20  |  accel_needed == min(accel_needed))
+
+set.seed(229)
+cc_fold <- createFolds(could_catch$player_caught, k = 5)
+
+act <- c()
+pred <- c()
+for(fold in cc_fold) {
+  train <- could_catch[-fold, ]
+  test <- could_catch[fold, ]
+  model <- gam(player_caught ~ te(ground_dist, time_to_ground) + te(eight_ft_dist, time_eight_ft) + OF, 
+               family = binomial, data = train)
+  act <- c(act, test$caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 16.50932
+
+plot(model, pages = 1)
+
+
+catch_chance_model <- gam(player_caught ~ te(ground_dist, time_to_ground) + te(eight_ft_dist, time_eight_ft) + OF, 
+                          family = binomial, data = could_catch)
+could_catch <- could_catch %>% ungroup %>% mutate(player_catch_prob = round(predict(catch_chance_model, type = "response"), 4))
+
+
+could_catch_players <- could_catch %>% group_by(game_string, play_per_game) %>%
+                                       filter(player_catch_prob >= 0.01  |  player_catch_prob == max(player_catch_prob))
 
 
 
