@@ -55,8 +55,8 @@ write.csv(player_speed, "player_speed.csv", row.names = FALSE)
 ball_pos_throws <- ball_positions %>% left_join(ball_events[,1:5] %>% filter(ball_eventcode %in% c(3,8)), 
                                                   by = c("game_string", "play_per_game", "timestamp"))
 
-ball_pos_throws <- ball_pos_throws %>% group_by(game_string, "play_per_game) %>%
-                                       filter(ball_eventcode %in% c(3,8), lag(ball_eventcode) %in% c(3,8), lag(ball_eventcode,2) %in% c(3,8)) %>% ungroup()
+ball_pos_throws <- ball_pos_throws %>% group_by(game_string, play_per_game) %>% mutate(ball_eventcode = ifelse(is.na(ball_eventcode), 999, ball_eventcode)) %>%
+                                       mutate(ball_eventcode = ifelse(lag(ball_eventcode) == 3  |  lag(ball_eventcode,2) == 3, 3, ball_eventcode))
 
 ball_pos_throws <- ball_pos_throws %>% left_join(lineups_players[,c(1,7,9:10)], by = c("game_string", "play_per_game", "player_id"))
 ball_pos_throws <- ball_pos_throws %>% filter(sum(!is.na(player_code)) == 1)
