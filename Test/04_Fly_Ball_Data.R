@@ -145,7 +145,7 @@ plot(fly_ball_land$ground_dist, fly_ball_land$eight_ft_dist)
 
 ############################################################################################################################################################################################
 
-could_catch <- fly_ball_land %>% select(game_string, play_per_game, timestamp_hit, player_id, caught, time_to_ground:ground_z, time_eight_ft:eight_ft_z)
+could_catch <- fly_ball_land %>% select(game_string, play_per_game, timestamp_hit, timestamp_done, player_id, caught, time_to_ground:ground_z, time_eight_ft:eight_ft_z)
 could_catch <- could_catch %>% left_join(player_positions[,1:6] %>% filter(player_id %in% c(3:9)),
                                          by = c("game_string", "play_per_game", "timestamp_hit" = "timestamp"),
                                          suffix = c("_event", ""))
@@ -181,11 +181,11 @@ plot(model, pages = 1)
 
 catch_chance_model <- gam(player_caught ~ te(ground_dist, time_to_ground) + te(eight_ft_dist, time_eight_ft) + OF, 
                           family = binomial, data = could_catch)
-could_catch <- could_catch %>% ungroup %>% mutate(player_catch_prob = round(predict(catch_chance_model, type = "response"), 4))
+could_catch <- could_catch %>% ungroup %>% mutate(player_catch_prob = predict(catch_chance_model, type = "response"))
 
 
 could_catch_players <- could_catch %>% group_by(game_string, play_per_game) %>%
-                                       filter(player_catch_prob >= 0.01  |  player_catch_prob == max(player_catch_prob))
+                                       filter(player_catch_prob >= 0.01  |  player_catch_prob > sort(player_catch_prob, decreasing = TRUE)[3])
 
 
 
