@@ -63,6 +63,8 @@ ball_pos_throws <- ball_pos_throws %>% group_by(game_string, play_per_game) %>%
 
 lineups_players <- lineups_players %>% ungroup()
 ball_pos_throws <- ball_pos_throws %>% left_join(lineups_players[,c(1,7,9:10)], by = c("game_string", "play_per_game", "player_id"))
+player_pos_speeds <- player_pos_speeds %>% group_by(game_string, play_per_game, player_id) %>%
+                                           filter(sum(player_code == first(player_code), na.rm = TRUE) == n())
 ball_pos_throws <- ball_pos_throws %>% filter(sum(!is.na(player_code)) == 1)
 
 ball_pos_throws <- ball_pos_throws %>% mutate(x_velo = 0.68181818 * (ball_position_x - lag(ball_position_x)) / ((timestamp - lag(timestamp))/1000),
