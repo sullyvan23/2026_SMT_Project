@@ -121,18 +121,48 @@ for(fold in catch_prob_folds) {
   print("-")
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
-  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 3) + te(OF_8ft_dist, time_left_8ft, k = 3), 
+  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
+                               te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.2796528
+### 0.2229196
 
-plot(model, page=1)
+plot(model, page = 1)
 summary(model)
 
 ####################################################################################################################################################################
+
+catch_prob_model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
+                                        te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3), 
+                                        family = binomial, data = catch_prob_data)
+
+catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"))
+
+write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
+
+####################################################################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 variables <- c("")
 act <- c()
@@ -160,14 +190,6 @@ logLoss(act, pred)
 ####################################################################################################################################################################
 
 
-catch_prob_model_2 <- bam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) + 
-                          s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
-                          s(speed_95, k = 3), 
-                          family = binomial, data = catch_prob_all_time_3)
-
-catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
-
-write.csv(catch_prob_all_time_pred_2, "catch_prob_all_time_pred_2.csv", row.names = FALSE)
 
 
 
