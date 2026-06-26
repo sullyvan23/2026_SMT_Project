@@ -70,6 +70,15 @@ catch_prob_data <- catch_prob_data %>% group_by(home_team) %>%
 catch_prob_data <- catch_prob_data %>% mutate(wall_ground_dist = ground_wall - sqrt(ground_x^2 + ground_y^2),
                                               wall_8ft_dist = eight_ft_wall - sqrt(eight_ft_x^2 + eight_ft_y^2))
 
+catch_prob_data <- catch_prob_data %>% left_join(lineups_players[,c(1,7,9:10)], by = c("game_string", "play_per_game", "player_id"))
+catch_prob_data <- catch_prob_data %>% group_by(game_string, play_per_game, player_id, timestamp) %>%
+                                       mutate(player_code = ifelse(first(player_code) != last(player_code), NA, player_code)) %>%
+                                       slice(1)
+catch_prob_data <- catch_prob_data %>% left_join(player_speed[,1:2], by = "player_code")
+catch_prob_data <- catch_prob_data %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95)) %>% 
+                                       rename(player_speed = speed_95)
+
+
 catch_prob_data <- catch_prob_data %>% relocate(player_caught, .after = last_col())
 
 write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
