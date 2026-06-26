@@ -83,6 +83,93 @@ catch_prob_data <- catch_prob_data %>% relocate(player_caught, .after = last_col
 
 write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
 
+####################################################################################################################################################################
+library(mgcv)
+library(randomForest)
+library(xgboost)
+library(caret)
+library(Metrics)
+
+catch_prob_data <- catch_prob_data %>% mutate(key = paste0(game_string, play_per_game, "_", player_id)) %>%
+                                       relocate(key, .after = player_id)
+
+set.seed(148)
+catch_prob_folds <- groupKFold(catch_prob_data$key, k = 2)
+
+####################################################################################################################################################################
+
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds) {
+  print("-")
+  train <- catch_prob_data[-fold, ]
+  test <- catch_prob_data[fold, ]
+  model <- randomForest(as.factor(player_caught) ~ OF_ground_dist + time_left_ground + OF_ground_angle + OF_ground_velo + OF_ground_velo_angle + wall_ground_dist +
+                                                   player_speed + OF, 
+                        data = train, ntree = 300)
+  act <- c(act, test$player_caught)
+  pred <- c(pred,  pmin( pmax( predict(model, newdata = test, type = "prob")[, 2], 0.001 ), 0.999 )  )
+}
+logLoss(act, pred)
+### 1.623544
+
+####################################################################################################################################################################
+
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds) {
+  print("-")
+  train <- catch_prob_data[-fold, ]
+  test <- catch_prob_data[fold, ]
+  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 3) + te(OF_8ft_dist, time_left_8ft, k = 3), 
+               family = binomial, data = train)
+  act <- c(act, test$player_caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.2796528
+
+plot(model, page=1)
+summary(model)
+
+####################################################################################################################################################################
+
+variables <- c("")
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds) {
+  print("-")
+  train <- as.matrix(catch_prob_data[-fold, variables])
+  test <- as.matrix(catch_prob_data[fold, variables])
+  xgb <- xgboost(
+    booster = "gbtree",
+    objective = "binary:logistic",
+    eval_metric = "logloss",
+    data = as.matrix(all_went_data_2[-fold, 2:7]),
+    label = catch_prob_data[-fold, "player_caught"],
+    nrounds = 100,
+    eta = 0.1,
+    verbose = 0
+  )
+  act <- c(act, test$player_caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+
+
+####################################################################################################################################################################
+
+
+catch_prob_model_2 <- bam(caught ~ te(OF_ball_dist, time_left) + s(OF_ball_angle, k = 3) + ti(velo_ball, time_left) + 
+                          s(velo_ball, k = 3) + s(accel_ball, k = 3) + s(wall_ball_dist, k = 6) + s(launch_angle, k = 3) + s(xyz_ball_dist, k = 3) +
+                          s(speed_95, k = 3), 
+                          family = binomial, data = catch_prob_all_time_3)
+
+catch_prob_all_time_pred_2 <- catch_prob_all_time_3 %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model_2, type = "response"))
+
+write.csv(catch_prob_all_time_pred_2, "catch_prob_all_time_pred_2.csv", row.names = FALSE)
+
+
 
 
 
