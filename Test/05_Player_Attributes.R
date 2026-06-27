@@ -1,9 +1,13 @@
 library(dplyr)
 library(tidyr)
 
-lineups_pivoted <- lineups %>% pivot_longer(cols = pitcher:on_3b,
-                                            names_to = "player_id",
-                                            values_to = "player_code")
+lineups_pivoted <- lineups %>% group_by(game_string, play_per_game) %>%
+                               mutate(across(c(pitcher:on_3b), ~ ifelse(sum(. == first(.), na.rm = TRUE) != n(), NA, .)))
+lineups_pivoted <- lineups_pivoted %>% slice(1)
+
+lineups_pivoted <- lineups_pivoted %>% pivot_longer(cols = pitcher:on_3b,
+                                                    names_to = "player_id",
+                                                    values_to = "player_code")
 lineups_pivoted <- lineups_pivoted %>% mutate(player_id = case_when(player_id == "pitcher"  ~  1,
                                                                     player_id == "catcher"  ~  2,
                                                                     player_id == "first_baseman"  ~  3,
