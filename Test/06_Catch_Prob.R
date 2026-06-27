@@ -139,25 +139,53 @@ catch_prob_model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k =
                                         te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3), 
                                         family = binomial, data = catch_prob_data)
 
-catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"))
+catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"),
+                                                            catch_odds = predict(catch_prob_model))
 
 write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
 
 ####################################################################################################################################################################
 
+caught_by_prob_data <- catch_prob_data %>% select(game_string, play_per_game, timestamp, player_id_event, caught, player_id, catch_odds)
+caught_by_prob_data <- caught_by_prob_data%>% pivot_wider(names_from = player_id, values_from = catch_odds)
+
+caught_by_prob_data <- caught_by_prob_data %>% rename(b1 = "3", b2 = "4", b3 = "5", ss = "6",
+                                                      lf = "7", cf = "8", rf = "9")
+caught_by_prob_data <- caught_by_prob_data %>% relocate(b1, b2, b3, ss, lf, cf, rf, .after = caught)
+caught_by_prob_data <- caught_by_prob_data %>% mutate(across(c(b1:rf), ~ ifelse(is.na(.), -50, .)))
+
+caught_by_prob_data <- caught_by_prob_data %>% mutate(caught_by = ifelse(caught == 1, player_id_event-2, 0))
 
 
+caught_by_model <- gam(list(caught_by ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b1 + b2 + b3 + ss + lf + cf + rf),
+                      family = multinom(K = 7), data = caught_by_prob_data)
 
 
+caught_by_prob_results <- cbind(caught_by_prob_data, predict(caught_by_model, type = "response"))
 
+write.csv(caught_by_prob_results, "caught_by_prob_results.csv", row.names = FALSE)
 
+####################################################################################################################################################################
 
+temp <- caught_by_prob_results %>% pivot_longer(cols = "1":"8",
+                                                names_to = "player_id",
+                                                values_to = "catch_prob")
+temp <- temp %>% select(-c(b1:caught_by)) %>%
+                 mutate(player_id = as.numeric(player_id) + 1)
 
+final_catch_prob_results <- catch_prob_data %>% select(game_string, play_per_game, timestamp, player_id) %>%
+                                                left_join(temp %>% select(-c(player_id_event:caught)), 
+                                                          by = c("game_string", "play_per_game", "timestamp", "player_id"))
 
+write.csv(final_catch_prob_results, "final_catch_prob_results.csv", row.names = FALSE)
 
-
-
-
+####################################################################################################################################################################
 
 
 
