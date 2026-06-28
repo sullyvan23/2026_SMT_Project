@@ -63,13 +63,18 @@ doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, play
                                        mutate(if_caught_catch_prob = catch_prob / sum(catch_prob),
                                               caught_prob = sum(catch_prob))
 
+doubled_up_data <- doubled_up_data %>% left_join(baserunners, by = c("game_string", "play_per_game"))
+doubled_up_data <- doubled_up_data %>% mutate(other_runners = first + second + third - 1) %>%
+                                       relocate(other_runners, .after = speed_95_runner) %>% select(-c(first:third))
+
 write.csv(doubled_up_data, "doubled_up_data.csv", row.names = FALSE)
 
-
+##############################################################################################################################################################################################
 
 doubled_up_data_sum <- doubled_up_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_og_x_dist:OF_og_dist, OF_og_velo:OF_og_velo_angle, speed_95_throw),
                                                          ~ weighted.mean(., if_caught_catch_prob)))
-doubled_up_data_sum <- doubled_up_data_sum %>% slice(1) %>% select(-c(player_code_OF, if_caught_catch_prob))
+doubled_up_data_sum <- doubled_up_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
+
 
 write.csv(doubled_up_data_sum, "doubled_up_data_sum.csv", row.names = FALSE)
 
