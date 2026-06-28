@@ -59,13 +59,14 @@ doubled_up_data <- doubled_up_data %>% left_join(player_speed[,1:2], by = c("pla
 doubled_up_data <- doubled_up_data %>% mutate(speed_95_throw = ifelse(is.na(speed_95_throw), mean(throw_speed$speed_95), speed_95_throw),
                                               speed_95_runner = ifelse(is.na(speed_95_runner), mean(player_speed$speed_95), speed_95_runner))
 
+doubled_up_data <- doubled_up_data %>% left_join(baserunners, by = c("game_string", "play_per_game"))
+doubled_up_data <- doubled_up_data %>% mutate(other_runners = first + second + third - 1) %>%
+                                       select(-c(first:third))
+
 doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
                                        mutate(if_caught_catch_prob = catch_prob / sum(catch_prob),
                                               caught_prob = sum(catch_prob))
 
-doubled_up_data <- doubled_up_data %>% left_join(baserunners, by = c("game_string", "play_per_game"))
-doubled_up_data <- doubled_up_data %>% mutate(other_runners = first + second + third - 1) %>%
-                                       relocate(other_runners, .after = speed_95_runner) %>% select(-c(first:third))
 
 write.csv(doubled_up_data, "doubled_up_data.csv", row.names = FALSE)
 
