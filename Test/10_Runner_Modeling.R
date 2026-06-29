@@ -2,7 +2,7 @@
 doubled_up_data_sum <- doubled_up_data_sum %>% mutate(key = paste0(game_string, play_per_game, "_", player_id_br)) %>%
                                                relocate(key, .after = player_id_br)
 set.seed(926)
-double_up_folds <- groupKFold(doubled_up_data_sum$key, k = 2)
+double_up_folds <- groupKFold(doubled_up_data_sum$key, k = 5)
 
 
 act <- c()
@@ -11,17 +11,27 @@ for(fold in double_up_folds) {
   print("-")
   train <- doubled_up_data_sum[-fold, ]
   test <- doubled_up_data_sum[fold, ]
-  model <- bam(safe_back ~ s(runner_og_dist, k = 3) + te(ground_og_dist, time_left_ground, k = 3) + te(eight_ft_og_dist, time_left_8ft, k = 3) +
-                           s(runner_og_velo, k = 3), 
+  model <- bam(safe_back ~ te(runner_og_dist, time_left_ground, k = 3) + ground_og_dist + ti(runner_og_dist, runner_og_velo, k = 3) +
+                           ti(OF_ground_og_angle, caught_prob, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.0591762
+### 0.146737
 
 plot(model, page = 1)
 summary(model)
+
+
+doubled_up_model <- bam(safe_back ~ te(runner_og_dist, time_left_ground, k = 3) + ground_og_dist + ti(runner_og_dist, runner_og_velo, k = 3) +
+                                    ti(OF_ground_og_angle, caught_prob, k = 3) + speed_95_throw + speed_95_runner, 
+                        family = binomial, data = doubled_up_data_sum)
+plot(doubled_up_model, page = 1)
+summary(doubled_up_model)
+
+
+doubled_up_data_sum_pred <- doubled_up_data_sum %>% ungroup() %>% mutate(doubled_prob = 1-predict(doubled_up_model, type = "response"))
 
 ####################################################################################################################################################################
 
