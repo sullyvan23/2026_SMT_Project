@@ -32,7 +32,8 @@ advance_data <- advance_data %>% mutate(basepath = case_when(pred_y < 0 | (pred_
                                                              pred_y < y_3b & pred_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
 
 advance_data <- advance_data %>% left_join(catch_prob_data %>% select(game_string, play_per_game, player_id, timestamp, pred_x, pred_y, OF_x_velo, OF_y_velo, OF_velo,
-                                                                      time_left_ground, ground_x, ground_y, time_left_8ft, eight_ft_x, eight_ft_y, player_code),
+                                                                      time_to_ground, time_left_ground, ground_x, ground_y, OF_ground_x_dist, OF_ground_y_dist, OF_ground_dist, 
+                                                                      player_code),
                                            by = c("game_string", "play_per_game", "timestamp", "player_id"),
                                            suffix = c("_runner", "_OF"))
 
@@ -82,8 +83,10 @@ advance_three_data <- advance_three_data %>% mutate(next_base_x = x_home,
 advance_one_data <- advance_one_data %>% mutate(OF_next_x_dist = pred_x_OF - next_base_x,
                                                 OF_next_y_dist = pred_y_OF - next_base_y,
                                                 OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
-                                                ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2),
-                                                eight_ft_next_dist = sqrt((eight_ft_x - next_base_x)^2 + (eight_ft_y - next_base_y)^2),
+                                                ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2),          
+                                                OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
+                                                                      OF_next_dist,
+                                                OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist),
                                                 OF_next_velo = -((OF_next_x_dist * OF_x_velo) + (OF_next_y_dist * OF_y_velo)) / 
                                                                OF_next_dist,
                                                 OF_next_velo_angle = acos(OF_next_velo / OF_velo))
@@ -91,7 +94,9 @@ advance_two_data <- advance_two_data %>% mutate(OF_next_x_dist = pred_x_OF - nex
                                                 OF_next_y_dist = pred_y_OF - next_base_y,
                                                 OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
                                                 ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2),
-                                                eight_ft_next_dist = sqrt((eight_ft_x - next_base_x)^2 + (eight_ft_y - next_base_y)^2),
+                                                OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
+                                                                      OF_next_dist,
+                                                OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist),
                                                 OF_next_velo = -((OF_next_x_dist * OF_x_velo) + (OF_next_y_dist * OF_y_velo)) / 
                                                                OF_next_dist,
                                                 OF_next_velo_angle = acos(OF_next_velo / OF_velo))
@@ -99,7 +104,9 @@ advance_three_data <- advance_three_data %>% mutate(OF_next_x_dist = pred_x_OF -
                                                     OF_next_y_dist = pred_y_OF - next_base_y,
                                                     OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
                                                     ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2),
-                                                    eight_ft_next_dist = sqrt((eight_ft_x - next_base_x)^2 + (eight_ft_y - next_base_y)^2),
+                                                    OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
+                                                                      OF_next_dist,
+                                                    OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist),
                                                     OF_next_velo = -((OF_next_x_dist * OF_x_velo) + (OF_next_y_dist * OF_y_velo)) / 
                                                                    OF_next_dist,
                                                     OF_next_velo_angle = acos(OF_next_velo / OF_velo))
@@ -111,15 +118,18 @@ advance_three_data <- advance_three_data %>% mutate(advance_one = ifelse(succ_ba
 
 ##############################################################################################################################################################################################
 
-advance_one_data_sum <- advance_one_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_next_x_dist:OF_next_dist, OF_next_velo:OF_next_velo_angle, speed_95_throw),
+advance_one_data_sum <- advance_one_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
+                                                             speed_95_throw),
                                                     ~ weighted.mean(., if_caught_catch_prob)))
 advance_one_data_sum <- advance_one_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
-advance_two_data_sum <- advance_two_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_next_x_dist:OF_next_dist, OF_next_velo:OF_next_velo_angle, speed_95_throw),
+advance_two_data_sum <- advance_two_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
+                                                             speed_95_throw),
                                                     ~ weighted.mean(., if_caught_catch_prob)))
 advance_two_data_sum <- advance_two_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
-advance_three_data_sum <- advance_three_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_next_x_dist:OF_next_dist, OF_next_velo:OF_next_velo_angle, speed_95_throw),
+advance_three_data_sum <- advance_three_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
+                                                                 speed_95_throw),
                                                         ~ weighted.mean(., if_caught_catch_prob)))
 advance_three_data_sum <- advance_three_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
