@@ -231,3 +231,22 @@ write.csv(doubled_up_results, "doubled_up_results.csv", row.names = FALSE)
 write.csv(tag_results, "tag_results.csv", row.names = FALSE)
 
 ##############################################################################################################################################################################################
+
+### plays doubled up
+y1_d128_MEX_ANI
+267
+y1_d136_EXB_ARN
+113
+y1_d168_BTL_ARN
+13
+y1_d172_OWV_VAS
+226                      ### delayed fielder motion
+y1_d182_LRQ_ARN
+160
+y1_d196_ARN_PHD
+282
+y1_d202_PHD_VAS
+9
+y1_d202_PHD_VAS
+195
+y1_d203_PHD_VAS
