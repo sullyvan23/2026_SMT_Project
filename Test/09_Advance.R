@@ -113,8 +113,8 @@ advance_three_data <- advance_three_data %>% mutate(OF_next_x_dist = pred_x_OF -
 
 
 advance_one_data <- advance_one_data %>% mutate(advance_one = ifelse(succ_bases_advanced >= 1, 1, 0))
-advance_two_data <- advance_two_data %>% mutate(advance_one = ifelse(succ_bases_advanced >= 2, 1, 0))
-advance_three_data <- advance_three_data %>% mutate(advance_one = ifelse(succ_bases_advanced == 3, 1, 0))
+advance_two_data <- advance_two_data %>% mutate(advance_two = ifelse(succ_bases_advanced >= 2, 1, 0))
+advance_three_data <- advance_three_data %>% mutate(advance_three = ifelse(succ_bases_advanced == 3, 1, 0))
 
 ##############################################################################################################################################################################################
 
