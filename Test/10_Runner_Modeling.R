@@ -102,19 +102,19 @@ for(fold in advance_one_folds) {
   print("-")
   train <- advance_one_data_sum[-fold, ]
   test <- advance_one_data_sum[fold, ]
-  model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + time_to_ground + caught_prob, 
+  model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + time_left_ground + caught_prob, 
                family = binomial, data = train)
   act <- c(act, test$advance_one) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.09437956
+### 0.07494819
 
 plot(model, page = 1)
 summary(model)
 
 
-advance_one_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + time_to_ground + caught_prob, 
+advance_one_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + time_left_ground + caught_prob, 
                          family = binomial, data = advance_one_data_sum)
 summary(advance_one_model)
 plot(advance_one_model, page = 1)
@@ -124,8 +124,8 @@ advance_one_data_sum_pred <- advance_one_data_sum %>% ungroup() %>% mutate(advan
 
 ####################################################################################################################################################################
 
-advance_two_data_sum <- advance_two_data_sum %>% left_join(advance_one_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob")],
-                                                           by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
+advance_two_data_sum <- advance_two_data_sum[,1:51] %>% left_join(advance_one_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob")],
+                                                                  by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
 
 
 act <- c()
@@ -134,19 +134,19 @@ for(fold in advance_two_folds) {
   print("-")
   train <- advance_two_data_sum[-fold, ]
   test <- advance_two_data_sum[fold, ]
-  model <- gam(advance_two ~ te(og_basepath_dist, time_to_ground, k = 4) + ground_next_dist + OF_ground_next_angle, 
+  model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + OF_ground_next_angle + time_to_ground, 
                family = binomial, data = train)
   act <- c(act, test$advance_two) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.4284293
+### 0.4028204
 
 plot(model, page = 1)
 summary(model)
 
 
-advance_two_model <- gam(advance_two ~ te(og_basepath_dist, time_to_ground, k = 4) + ground_next_dist + OF_ground_next_angle + speed_95_runner, 
+advance_two_model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + OF_ground_next_angle + time_to_ground + speed_95_runner, 
                          family = binomial, data = advance_two_data_sum)
 summary(advance_two_model)
 plot(advance_two_model, page = 1)
@@ -156,9 +156,9 @@ advance_two_data_sum_pred <- advance_two_data_sum %>% ungroup() %>% mutate(advan
 
 ####################################################################################################################################################################
 
-advance_three_data_sum <- advance_three_data_sum %>% left_join(advance_two_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob",
-                                                                                            "advance_two_prob")],
-                                                               by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
+advance_three_data_sum <- advance_three_data_sum[,1:51] %>% left_join(advance_two_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob",
+                                                                                                "advance_two_prob")],
+                                                                      by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
 
 
 act <- c()
@@ -167,25 +167,60 @@ for(fold in advance_three_folds) {
   print("-")
   train <- advance_three_data_sum[-fold, ]
   test <- advance_three_data_sum[fold, ]
-  model <- gam(advance_three ~ te(og_basepath_dist, time_to_ground, k = 3) + ground_next_dist + advance_two_prob, 
+  model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + advance_two_prob, 
                family = binomial, data = train)
   act <- c(act, test$advance_three) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.4933654
+### 0.474956
 
 plot(model, page = 1)
 summary(model)
 
 
-advance_three_model <- gam(advance_three ~ te(og_basepath_dist, time_to_ground, k = 3) + ground_next_dist + advance_two_prob + speed_95_runner, 
+advance_three_model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + advance_two_prob + speed_95_runner, 
                            family = binomial, data = advance_three_data_sum)
 summary(advance_three_model)
 plot(advance_three_model, page = 1)
 
 
 advance_three_data_sum_pred <- advance_three_data_sum %>% ungroup() %>% mutate(advance_three_prob = predict(advance_three_model, type = "response"))
+
+####################################################################################################################################################################
+
+check <- advance_three_data_sum_pred %>% select(game_string, play_per_game, time_left_ground, advance_one_prob, advance_two_prob, advance_three_prob)
+check <- check %>% group_by(game_string, play_per_game) %>% mutate(time_left_ground = round(time_left_ground / max(time_left_ground), 1))
+check <- check %>% group_by(time_left_ground) %>% summarise(advance_one_prob = mean(advance_one_prob),
+                                                            advance_two_prob = mean(advance_two_prob),
+                                                            advance_three_prob = mean(advance_three_prob),
+                                                            count = n())
+
+
+
+check <- advance_two_data_sum_pred %>% select(time_left_ground, advance_two, advance_two_prob)
+check <- check %>% mutate(time_left_ground = round(time_left_ground, 1))
+check <- check %>% group_by(time_left_ground) %>% summarise(advance_two = mean(advance_two),
+                                                            advance_two_prob = mean(advance_two_prob),
+                                                            count = n())
+check <- check %>% filter(count >= 50)
+
+plot(check$time_left_ground, check$advance_two, col = "black")
+points(check$time_left_ground, check$advance_two_prob, col = "red")
+
+
+
+check <- advance_two_data_sum_pred %>% select(game_string, play_per_game, time_left_ground, advance_two, advance_two_prob)
+check <- check %>% group_by(game_string, play_per_game) %>% mutate(time_left_ground = round(time_left_ground / max(time_left_ground), 1))
+check <- check %>% group_by(time_left_ground) %>% summarise(advance_two = mean(advance_two),
+                                                            advance_two_prob = mean(advance_two_prob),
+                                                            count = n())
+
+plot(check$time_left_ground, check$advance_two)
+plot(check$time_left_ground, check$advance_two_prob)
+
+
+
 
 
 
