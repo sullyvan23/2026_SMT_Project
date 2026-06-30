@@ -124,7 +124,7 @@ advance_one_data_sum_pred <- advance_one_data_sum %>% ungroup() %>% mutate(advan
 
 ####################################################################################################################################################################
 
-advance_two_data_sum <- advance_two_data_sum[,1:51] %>% left_join(advance_one_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob")],
+advance_two_data_sum <- advance_two_data_sum[,1:50] %>% left_join(advance_one_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob")],
                                                                   by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
 
 
@@ -134,7 +134,7 @@ for(fold in advance_two_folds) {
   print("-")
   train <- advance_two_data_sum[-fold, ]
   test <- advance_two_data_sum[fold, ]
-  model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + OF_ground_next_angle + time_to_ground, 
+  model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next2_dist + OF_ground_next2_angle + time_to_ground, 
                family = binomial, data = train)
   act <- c(act, test$advance_two) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
@@ -146,7 +146,7 @@ plot(model, page = 1)
 summary(model)
 
 
-advance_two_model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + OF_ground_next_angle + time_to_ground + speed_95_runner, 
+advance_two_model <- gam(advance_two ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next2_dist + OF_ground_next2_angle + time_to_ground + speed_95_runner, 
                          family = binomial, data = advance_two_data_sum)
 summary(advance_two_model)
 plot(advance_two_model, page = 1)
@@ -156,7 +156,7 @@ advance_two_data_sum_pred <- advance_two_data_sum %>% ungroup() %>% mutate(advan
 
 ####################################################################################################################################################################
 
-advance_three_data_sum <- advance_three_data_sum[,1:51] %>% left_join(advance_two_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob",
+advance_three_data_sum <- advance_three_data_sum[,1:50] %>% left_join(advance_two_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob",
                                                                                                 "advance_two_prob")],
                                                                       by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
 
@@ -167,7 +167,7 @@ for(fold in advance_three_folds) {
   print("-")
   train <- advance_three_data_sum[-fold, ]
   test <- advance_three_data_sum[fold, ]
-  model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + advance_two_prob, 
+  model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next3_dist + advance_two_prob, 
                family = binomial, data = train)
   act <- c(act, test$advance_three) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
@@ -179,7 +179,7 @@ plot(model, page = 1)
 summary(model)
 
 
-advance_three_model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + advance_two_prob + speed_95_runner, 
+advance_three_model <- gam(advance_three ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next3_dist + advance_two_prob + speed_95_runner, 
                            family = binomial, data = advance_three_data_sum)
 summary(advance_three_model)
 plot(advance_three_model, page = 1)
