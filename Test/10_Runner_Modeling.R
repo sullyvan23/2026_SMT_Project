@@ -14,20 +14,21 @@ for(fold in double_up_folds) {
   print("-")
   train <- doubled_up_data_sum[-fold, ]
   test <- doubled_up_data_sum[fold, ]
-  model <- gam(safe_back ~ te(runner_og_dist, ground_og_dist, time_left_ground, k = 3) + ground_og_dist, 
+  model <- gam(safe_back ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_og_dist + ti(og_basepath_dist, runner_basepath_velo, k = 3) +
+                           ti(OF_ground_og_angle, caught_prob, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.146737
+### 0.134658
 
 plot(model, page = 1)
 summary(model)
 
 
-doubled_up_model <- gam(safe_back ~ te(runner_og_dist, time_left_ground, k = 3) + ground_og_dist + ti(runner_og_dist, runner_og_velo, k = 3) +
-                                    ti(OF_ground_og_angle, caught_prob, k = 3) + speed_95_throw + speed_95_runner, 
+doubled_up_model <- gam(safe_back ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_og_dist + ti(og_basepath_dist, runner_basepath_velo, k = 3) +
+                                    ti(OF_ground_og_angle, caught_prob, k = 3) + speed_95_throw, 
                         family = binomial, data = doubled_up_data_sum)
 plot(doubled_up_model, page = 1)
 summary(doubled_up_model)
@@ -57,21 +58,21 @@ for(fold in tag_up_folds) {
   print("-")
   train <- tag_up_data_sum[-fold, ]
   test <- tag_up_data_sum[fold, ]
-  model <- gam(succ_tag ~ te(runner_og_dist, time_left_ground, k = 3) + ground_next_dist + ti(runner_og_dist, runner_og_velo, k = 3) +
+  model <- gam(succ_tag ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + ti(og_basepath_dist, runner_basepath_velo, k = 3) +
                           ti(OF_ground_next_angle, caught_prob, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$succ_tag) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1988888
+### 0.1999908
 
 plot(model, page = 1)
 summary(model)
 
 
 
-tag_up_model <- gam(succ_tag ~ te(runner_og_dist, time_left_ground, k = 3) + ground_next_dist + ti(runner_og_dist, runner_og_velo, k = 3) +
+tag_up_model <- gam(succ_tag ~ te(og_basepath_dist, time_left_ground, k = 3) + ground_next_dist + ti(og_basepath_dist, runner_basepath_velo, k = 3) +
                                ti(OF_ground_next_angle, caught_prob, k = 3) + speed_95_throw + speed_95_runner, 
                     family = binomial, data = tag_up_data_sum)
 plot(tag_up_model, page = 1)
