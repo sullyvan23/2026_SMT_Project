@@ -39,3 +39,31 @@ example_time <- example_time %>% mutate(doubled_up_prob = 1 - predict(doubled_up
 example_time <- example_time %>% mutate(advance_three_prob = predict(advance_three_model, newdata = example_time, type = "response"))
 
 
+example_time <- example_time %>% mutate(doubled = doubled_up_prob * caught_prob,
+                                        stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
+                                        tag = tag_up_prob * caught_prob,
+                                        advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
+                                        advance_1 = (advance_one_prob - advance_two_prob) * (1 - caught_prob),
+                                        advance_2 = (advance_two_prob - advance_three_prob) * (1 - caught_prob),
+                                        advance_3 = advance_three_prob * (1 - caught_prob))
+
+
+example_time <- example_time %>% mutate(d_sit = "2.5 ___",
+                                        s_sit = "1.5 1__",
+                                        t_sit = "1.5 _2_",
+                                        a0_sit = "1.5 1__",
+                                        a1_sit = "0.5 12_",
+                                        a2_sit = "0.5 _23",
+                                        a3_sit = "0.5 __3",
+                                        add_a3 = 1)
+
+### write.csv(example_time, "example_time.csv", row.names = FALSE)
+### adding run expectancies
+
+### example_time <- read_csv("example_time.csv")
+
+
+
+
+
+
