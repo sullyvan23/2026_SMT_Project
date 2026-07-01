@@ -24,6 +24,8 @@ example_play <- example_play %>% mutate(OF_next2_x_dist = pred_x_OF - next2_base
                                         OF_ground_next2_angle = acos(OF_ground_next2_dist / OF_ground_dist),
                                         ground_next3_dist = sqrt((ground_x - next3_base_x)^2 + (ground_y - next3_base_y)^2))
 
+example_play <- example_play %>% mutate(basepath_velo = (basepath - lag(basepath)) / (timestamp - lag(timestamp))/1000)
+
 
 
 
