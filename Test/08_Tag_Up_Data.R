@@ -17,10 +17,16 @@ tag_up_data <- tag_up_data %>% group_by(game_string, play_per_game, player_id_br
                               .x$rmse_y <- RMSE(.x$pred_y, .x$field_y)
 
                               .x})
-tag_up_data <- tag_up_data %>% mutate(runner_x_velo = 0.681818 * (pred_x - lag(pred_x)) / ((timestamp - lag(timestamp))/1000),
-                                      runner_y_velo = 0.681818 * (pred_y - lag(pred_y)) / ((timestamp - lag(timestamp))/1000),
-                                      runner_velo = sqrt(runner_x_velo^2 + runner_y_velo^2),
-                                      across(c(runner_x_velo:runner_velo), ~ ifelse(is.na(.), lead(.), .)))
+
+tag_up_data <- tag_up_data %>% mutate(dist_1st = sqrt((pred_x - x_1b)^2 + (pred_y - y_1b)^2),
+                                      dist_2nd = sqrt((pred_x - x_2b)^2 + (pred_y - y_2b)^2),
+                                      dist_3rd = sqrt((pred_x - x_3b)^2 + (pred_y - y_3b)^2),
+                                      dist_home = sqrt((pred_x - x_home)^2 + (pred_y - y_home)^2))
+tag_up_data <- tag_up_data %>% mutate(basepath = case_when(pred_y < 0 | (pred_y < 50 & pred_x > 0)  ~  4, 
+                                                           pred_y >= 50 & pred_x > x_2b  ~  1 + (dist_1st / (dist_1st + dist_2nd)),
+                                                           pred_y >= y_3b & pred_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
+                                                           pred_y < y_3b & pred_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
+
 tag_up_data <- tag_up_data %>% mutate(og_base_x = case_when(player_id_br == 11  ~  x_1b,
                                                             player_id_br == 12  ~  x_2b,
                                                             player_id_br == 13  ~  x_3b),
@@ -41,18 +47,15 @@ tag_up_data <- tag_up_data %>% left_join(catch_prob_data %>% select(game_string,
                                          suffix = c("_runner", "_OF"))
 
 
-tag_up_data <- tag_up_data %>% mutate(runner_og_x_dist = pred_x_runner - og_base_x,
-                                      runner_og_y_dist = pred_y_runner - og_base_y,
-                                      runner_og_dist = sqrt(runner_og_x_dist^2 + runner_og_y_dist^2),
+tag_up_data <- tag_up_data %>% mutate(runner_basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
+                                      runner_basepath_velo = ifelse(is.na(runner_basepath_velo), lead(runner_basepath_velo), runner_basepath_velo),
+                                      og_basepath_dist = basepath - player_id_br + 10,
                                       OF_next_x_dist = pred_x_OF - next_base_x,
                                       OF_next_y_dist = pred_y_OF - next_base_y,
                                       OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
                                       ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2))
 
-tag_up_data <- tag_up_data %>% mutate(runner_og_velo = -((runner_og_x_dist * runner_x_velo) + (runner_og_y_dist * runner_y_velo)) / 
-                                                       runner_og_dist,
-                                      runner_og_velo_angle = acos(runner_og_velo / runner_velo),
-                                      OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
+tag_up_data <- tag_up_data %>% mutate(OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
                                                             OF_next_dist,
                                       OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist),
                                       OF_next_velo = -((OF_next_x_dist * OF_x_velo) + (OF_next_y_dist * OF_y_velo)) / 
