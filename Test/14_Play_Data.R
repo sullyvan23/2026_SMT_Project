@@ -66,16 +66,13 @@ all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, 
                                                     basepath, og_basepath_dist, runner_basepath_velo, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
                                                     OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
                                                     speed_95_runner, speed_95_throw, caught_prob)
-all_plays_data_sum <- all_plays_data_sum %>% ungroup() %>% mutate(proj_batter_base = predict(batter_bases_model, newdata = all_plays_data_sum))
+all_plays_data_sum <- all_plays_data_sum %>% ungroup() %>% mutate(proj_batter_base = round(predict(batter_bases_model, newdata = all_plays_data_sum)))
 
 write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 
+##################################################################################################################################################################################
 
-check <- all_plays_data_sum %>% mutate(doubled_up_prob = 1 - predict(doubled_up_model, newdata = all_plays_data_sum, type = "response"),
-                                       tag_up_prob = predict(tag_up_model, newdata = all_plays_data_sum, type = "response"),
-                                       advance_one_prob = predict(advance_one_model, newdata = all_plays_data_sum, type = "response"),
-                                       advance_two_prob = predict(advance_two_model, newdata = all_plays_data_sum, type = "response"))
-check <- check %>% mutate(advance_three_prob = predict(advance_three_model, newdata = check, type = "response"))
+one_on_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, timestamp) %>% filter(n() == 1) %>% ungroup()
 
 
 
