@@ -67,6 +67,8 @@ all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, 
                                                     OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
                                                     speed_95_runner, speed_95_throw, caught_prob)
 all_plays_data_sum <- all_plays_data_sum %>% ungroup() %>% mutate(proj_batter_base = round(predict(batter_bases_model, newdata = all_plays_data_sum)))
+all_plays_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
+                                             mutate(fps = time_left_ground - lead(time_left_ground))
 
 write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 
