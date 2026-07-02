@@ -14,13 +14,13 @@ for(fold in double_up_folds) {
   print("-")
   train <- doubled_up_data_sum[-fold, ]
   test <- doubled_up_data_sum[fold, ]
-  model <- gam(safe_back ~ og_basepath_dist + time_left_ground + ground_og_dist, 
+  model <- gam(safe_back ~ og_basepath_dist + time_left_ground + ground_og_dist + runner_basepath_velo, 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.127229
+### 0.1251368
 
 plot(model, page = 1)
 summary(model)
