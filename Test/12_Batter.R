@@ -26,19 +26,21 @@ for(fold in bat_folds) {
   print("-")
   train <- batter_advance[-fold, ]
   test <- batter_advance[fold, ]
-  model <- gam(final_base ~ te(field_x, field_y, k = 4) + caught_prob, 
+  model <- gam(final_base ~ te(ground_x, ground_y, k = 6), 
                data = train)
   act <- c(act, test$final_base)
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.03895985
+### 0.4390282
 
 plot(model, page = 1)
 summary(model)
 
 
-batter_bases_model <- gam(final_base ~ te(field_x, field_y, k = 4) + caught_prob, data = batter_advance)
+batter_bases_model <- gam(final_base ~ te(ground_x, ground_y, k = 6), data = batter_advance)
+plot(batter_bases_model, pages = 1)
+
 batter_advance <- batter_advance %>% ungroup() %>% mutate(proj_final_base = predict(batter_bases_model))
 
 
