@@ -64,8 +64,12 @@ basepath_deviation <- basepath_deviation %>% mutate(last_base = floor(basepath))
                                              filter(last_base == lag(last_base, 4))
 
 basepath_deviation <- basepath_deviation %>% mutate(next_basepath_velo = lead(basepath_velo),
-                                                    diff = next_basepath_velo - basepath_velo)
+                                                    diff = next_basepath_velo - basepath_velo,
+                                                    basepath_diff = basepath - lag(basepath))
 
 plot(basepath_deviation$basepath_velo, basepath_deviation$diff)
+plot(basepath_deviation$basepath, basepath_deviation$basepath_diff)
+
+
 
 ### prob can change by 0.1 every time
