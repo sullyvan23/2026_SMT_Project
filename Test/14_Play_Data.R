@@ -74,6 +74,12 @@ write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 
 one_on_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, timestamp) %>% filter(n() == 1) %>% ungroup()
 
+### dataset with run expectancies of situations
+one_on_run_exps <- read_csv("one_on_run_exps.csv")
+one_on_data_sum <- one_on_data_sum %>% left_join(one_on_run_exps, by = c("player_id_br", "proj_batter_base"))
+
+
+
 
 
 
