@@ -1,0 +1,49 @@
+
+tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+
+ggplot(tag_end, aes(x = og_basepath_dist, y = ground_next_dist, color = att_tag)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+set.seed(191)
+att_tag_folds <- createFolds(tag_end$key, k = 10)
+
+
+act <- c()
+pred <- c()
+for(fold in att_tag_folds) {
+  print("-")
+  train <- tag_end[-fold, ]
+  test <- tag_end[fold, ]
+  model <- gam(att_tag ~ te(og_basepath_dist, ground_next_dist, k = 3), 
+               family = binomial, data = train)
+  act <- c(act, test$att_tag)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.152545
+
+
+plot(model, page = 1)
+summary(model)
+
+
+
+att_tag_model <- gam(att_tag ~ te(og_basepath_dist, ground_next_dist, k = 3), 
+                     family = binomial, data = tag_end)
+
+tag_end <- tag_end %>%ungroup() %>% mutate(att_tag_prob = round(predict(att_tag_model, type = "response"), 3)) %>% relocate(att_tag_prob, .after = att_tag)
+
+tag_end <- tag_end %>% left_join(baserunners, by = c("game_string", "play_per_game")) %>%
+                       mutate(others = first + second + third - 1) %>% relocate(others, .after = att_tag_prob)
+
+
+
+tag_end <- tag_end %>% filter(att_tag_prob >= 0.15)
+
+ggplot(tag_end, aes(x = og_basepath_dist, y = runner_basepath_velo, color = att_tag)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+tag_up_data_sum_2 <- tag_end[,1:3] %>% left_join(tag_up_data_sum, by = c("game_string", "play_per_game", "player_id_br"))
+
