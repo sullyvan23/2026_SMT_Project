@@ -26,7 +26,7 @@ plot(model, page = 1)
 summary(model)
 
 
-doubled_up_model <- gam(safe_back ~ og_basepath_dist +  time_left_ground + ground_og_dist + speed_95_throw, 
+doubled_up_model <- gam(safe_back ~ og_basepath_dist +  time_left_ground + ground_og_dist + runner_basepath_velo + speed_95_throw, 
                         family = binomial, data = doubled_up_data_sum)
 summary(doubled_up_model)
 plot(doubled_up_model, page = 1)
