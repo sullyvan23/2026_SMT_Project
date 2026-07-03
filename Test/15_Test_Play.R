@@ -52,7 +52,7 @@ for(i in 2:nrow(test_play)) {
                                                 basepath = og_basepath_dist - player_id_br + 12)
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(doubled_up_model, newdata = next_time_check, type = "response"),
-                                                tag_up_prob = predict(tag_up_model, newdata = next_time_check, type = "response"),
+                                                tag_up_prob = predict(tag_up_model_2, newdata = next_time_check, type = "response"),
                                                 advance_one_prob = predict(advance_one_model, newdata = next_time_check, type = "response"),
                                                 advance_two_prob = predict(advance_two_model, newdata = next_time_check, type = "response"))
   next_time_check <- next_time_check %>% mutate(advance_three_prob = predict(advance_three_model, newdata = next_time_check, type = "response"))
