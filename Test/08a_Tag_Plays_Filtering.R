@@ -47,3 +47,52 @@ ggplot(tag_end, aes(x = og_basepath_dist, y = runner_basepath_velo, color = att_
 
 tag_up_data_sum_2 <- tag_end[,1:3] %>% left_join(tag_up_data_sum, by = c("game_string", "play_per_game", "player_id_br"))
 
+##############################################################################################################################################################################
+
+tag_check <- tag_up_data_sum_2 %>% mutate(time_left_ground = round(time_left_ground)) %>% group_by(time_left_ground, succ_tag) %>%
+                                   summarise(og_basepath_dist = mean(og_basepath_dist), runner_basepath_velo = mean(runner_basepath_velo),
+                                             count = n())
+
+##############################################################################################################################################################################
+
+set.seed(298)
+tag_up_folds_2 <- groupKFold(tag_up_data_sum_2$key, k = 5)
+
+
+act <- c()
+pred <- c()
+for(fold in tag_up_folds_2) {
+  print("-")
+  train <- tag_up_data_sum_2[-fold, ]
+  test <- tag_up_data_sum_2[fold, ]
+  model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + runner_basepath_velo, 
+               family = binomial, data = train)
+  act <- c(act, test$succ_tag) 
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.4174001
+
+plot(model, page = 1)
+summary(model)
+
+
+
+tag_up_model_2 <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist, 
+                      family = binomial, data = tag_up_data_sum_2)
+
+
+tag_up_data_sum_2_pred <- tag_up_data_sum_2 %>% ungroup() %>% mutate(tag_prob = predict(tag_up_model_2, type = "response")) %>%
+                                                relocate(tag_prob, .after = succ_tag)
+
+summary(tag_up_model)
+plot(tag_up_model, page = 1)
+
+
+
+
+
+
+
+
+
