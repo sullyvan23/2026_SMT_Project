@@ -65,28 +65,28 @@ for(fold in tag_up_folds_2) {
   print("-")
   train <- tag_up_data_sum_2[-fold, ]
   test <- tag_up_data_sum_2[fold, ]
-  model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + runner_basepath_velo, 
+  model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + OF_ground_next_angle, 
                family = binomial, data = train)
   act <- c(act, test$succ_tag) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.4174001
+### 0.414123
 
 plot(model, page = 1)
 summary(model)
 
 
 
-tag_up_model_2 <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist, 
+tag_up_model_2 <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + OF_ground_next_angle + runner_basepath_velo + speed_95_runner + speed_95_throw, 
                       family = binomial, data = tag_up_data_sum_2)
 
 
 tag_up_data_sum_2_pred <- tag_up_data_sum_2 %>% ungroup() %>% mutate(tag_prob = predict(tag_up_model_2, type = "response")) %>%
                                                 relocate(tag_prob, .after = succ_tag)
 
-summary(tag_up_model)
-plot(tag_up_model, page = 1)
+summary(tag_up_model_2)
+plot(tag_up_model_2, page = 1)
 
 
 
