@@ -3,6 +3,7 @@ doubled_up_data_sum <- doubled_up_data_sum %>% mutate(key = paste0(game_string, 
                                                relocate(key, .after = player_id_br)
 set.seed(926)
 double_up_folds <- groupKFold(doubled_up_data_sum$key, k = 5)
+double_up_folds_2 <- createFolds(doubled_up_data_sum$safe_back, k = 5)
 
 ggplot(doubled_up_data_sum, aes(x = runner_og_dist, y = time_left_ground, color = safe_back)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
