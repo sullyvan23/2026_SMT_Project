@@ -53,6 +53,9 @@ doubled_up_data_sum_2 <- doubled_up_data_sum %>% group_by(game_string, play_per_
                                                  mutate(final_basepath_dist = last(og_basepath_dist),
                                                         final_velo = last(runner_basepath_velo))
 
+ggplot(doubled_up_data_sum_2, aes(x = og_basepath_dist, y = time_left_ground, color = final_basepath_dist)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.4)
+
 
 act <- c()
 pred <- c()
@@ -60,17 +63,32 @@ for(fold in double_up_folds) {
   print("-")
   train <- doubled_up_data_sum_2[-fold, ]
   test <- doubled_up_data_sum_2[fold, ]
-  model <- gam(final_basepath_dist ~ te(time_left_ground, og_basepath_dist, k = 3), 
+  model <- gam(final_basepath_dist ~ te(og_basepath_dist, time_left_ground, k = 3) + ti(runner_basepath_velo, time_left_ground, k = 3), 
                data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.6988346
+### 0.7007678
 
 
-last_dist_model <- gam(final_basepath_dist ~ te(time_left_ground, og_basepath_dist, k = 3), 
+act <- c()
+pred <- c()
+for(fold in double_up_folds) {
+  print("-")
+  train <- doubled_up_data_sum_2[-fold, ]
+  test <- doubled_up_data_sum_2[fold, ]
+  model <- randomForest(final_basepath_dist ~ og_basepath_dist + runner_basepath_velo + time_left_ground, 
+                        data = train, ntree = 100)
+  act <- c(act, test$safe_back)
+  pred <- c(pred, predict(model, newdata = test))
+}
+RMSE(act, pred)
+### 0.7007678
+
+last_dist_model <- gam(final_basepath_dist ~ te(og_basepath_dist, time_left_ground, k = 3) + ti(runner_basepath_velo, time_left_ground, k = 3), 
                        data = doubled_up_data_sum_2)
+summary(last_dist_model)
 doubled_up_data_sum_2_pred <- doubled_up_data_sum_2 %>% ungroup() %>% mutate(pred_final_basepath_dist = predict(last_dist_model))
 
 
@@ -98,6 +116,8 @@ doubled_up_data_sum_2_pred <- doubled_up_data_sum_2_pred %>% ungroup() %>% mutat
 doubled_up_data_sum_2_pred <- doubled_up_data_sum_2_pred %>% mutate(doubled_prob = 1-predict(final_doubled_model, newdata = doubled_up_data_sum_2_pred, type = "response"))
 
 
-
+check <- doubled_up_data_sum_2_pred %>% filter(time_left_ground < 1.25, time_left_ground > 0.75, 
+                                               og_basepath_dist < 0.2, og_basepath_dist > 0.15,
+                                               runner_basepath_velo < -0.13, runner_basepath_velo > -0.16)
 
 
