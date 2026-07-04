@@ -37,14 +37,6 @@ doubled_up_data_sum_pred <- doubled_up_data_sum %>% ungroup() %>% mutate(doubled
 
 ####################################################################################################################################################################
 
-doubled_up_final <- doubled_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
-
-ggplot(doubled_up_final, aes(x = runner_og_dist, y = ground_og_dist, color = safe_back)) + 
-       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
-
-####################################################################################################################################################################
-
-
 tag_up_data_sum <- tag_up_data_sum %>% mutate(key = paste0(game_string, play_per_game, "_", player_id_br)) %>%
                                        relocate(key, .after = player_id_br)
 set.seed(298)
