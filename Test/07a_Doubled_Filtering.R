@@ -4,6 +4,9 @@ doubled_up_final <- doubled_up_data_sum_pred %>% group_by(game_string, play_per_
 ggplot(doubled_up_final, aes(x = og_basepath_dist, y = ground_og_dist, color = safe_back)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
+doubled_up_final <- doubled_up_final %>% rename(pred_final_basepath_dist = og_basepath_dist,
+                                                pred_final_velo = runner_basepath_velo)
+
 
 
 set.seed(883)
@@ -16,7 +19,7 @@ for(fold in final_doubled_folds) {
   print("-")
   train <- doubled_up_final[-fold, ]
   test <- doubled_up_final[fold, ]
-  model <- gam(safe_back ~ og_basepath_dist + ground_og_dist, 
+  model <- gam(safe_back ~ pred_final_basepath_dist + ground_og_dist + pred_final_velo, 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
@@ -28,7 +31,7 @@ plot(model, page = 1)
 summary(model)
 
 
-final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist, 
+final_doubled_model <- gam(safe_back ~ pred_final_basepath_dist + ground_og_dist + pred_final_velo, 
                            family = binomial, data = doubled_up_final)
 doubled_up_final <- doubled_up_final %>% ungroup() %>% mutate(final_doubled_prob = 1-predict(final_doubled_model, type = "response"))
 
@@ -44,8 +47,55 @@ doubled_by_time <- doubled_up_data_sum_2 %>% filter(game_string != "y1_d172_OWV_
                                                 summarise(og_basepath_dist = mean(og_basepath_dist),
                                                           runner_basepath_velo = mean(runner_basepath_velo))
 
+####################################################################################################################################################################
+
+doubled_up_data_sum_2 <- doubled_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
+                                                 mutate(final_basepath_dist = last(og_basepath_dist),
+                                                        final_velo = last(runner_basepath_velo))
 
 
+act <- c()
+pred <- c()
+for(fold in double_up_folds) {
+  print("-")
+  train <- doubled_up_data_sum_2[-fold, ]
+  test <- doubled_up_data_sum_2[fold, ]
+  model <- gam(final_basepath_dist ~ te(time_left_ground, og_basepath_dist, k = 3), 
+               data = train)
+  act <- c(act, test$safe_back)
+  pred <- c(pred, predict(model, newdata = test))
+}
+RMSE(act, pred)
+### 0.7007668
+
+
+last_dist_model <- gam(final_basepath_dist ~ te(time_left_ground, og_basepath_dist, k = 3), 
+                       data = doubled_up_data_sum_2)
+doubled_up_data_sum_2_pred <- doubled_up_data_sum_2 %>% ungroup() %>% mutate(pred_final_basepath_dist = predict(last_dist_model))
+
+
+act <- c()
+pred <- c()
+for(fold in double_up_folds) {
+  print("-")
+  train <- doubled_up_data_sum_2[-fold, ]
+  test <- doubled_up_data_sum_2[fold, ]
+  model <- gam(final_velo ~ te(time_left_ground, runner_basepath_velo, k = 3), 
+               data = train)
+  act <- c(act, test$safe_back)
+  pred <- c(pred, predict(model, newdata = test))
+}
+RMSE(act, pred)
+### 1.02938
+
+plot(model, page = 1)
+summary(model)
+
+
+last_velo_model <- gam(final_velo ~ te(time_left_ground, runner_basepath_velo, k = 3), data = doubled_up_data_sum_2)
+doubled_up_data_sum_2_pred <- doubled_up_data_sum_2_pred %>% ungroup() %>% mutate(pred_final_velo = predict(last_velo_model))
+
+doubled_up_data_sum_2_pred <- doubled_up_data_sum_2_pred %>% mutate(doubled_prob = 1-predict(final_doubled_model, newdata = doubled_up_data_sum_2_pred, type = "response"))
 
 
 
