@@ -47,9 +47,13 @@ test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * 
 model_play <- test_play[1,]
 
 for(i in 2:nrow(test_play)) {
-  speeds <- seq(as.numeric(round(predict(lowest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])),4)),
-                as.numeric(round(predict(highest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])),4)),
-                by = 0.0001)
+  speeds <- seq(model_play$runner_basepath_velo[i-1] + 
+            round((as.numeric(predict(lowest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1]))) - model_play$runner_basepath_velo[i-1]) 
+                  * (model_play$fps[i-1] / 0.05), 4),
+            model_play$runner_basepath_velo[i-1] + 
+            round((as.numeric(predict(highest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1]))) - model_play$runner_basepath_velo[i-1]) 
+                  * (model_play$fps[i-1] / 0.05), 4),
+            by = 0.0001)
   
   next_time_check <- test_play[i,] %>% slice(rep(1,length(speeds)))
   next_time_check$runner_basepath_velo <- speeds
