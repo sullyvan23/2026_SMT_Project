@@ -82,7 +82,8 @@ possible_next_speeds <- basepath_deviation %>% mutate(next_basepath_velo = next_
 possible_next_speeds <- possible_next_speeds %>% filter(basepath_velo <= 0.3)
 
 possible_next_speeds <- bind_rows(possible_next_speeds,
-                                  possible_next_speeds[2:31,] %>% mutate(across(c(basepath_velo:lowest_next), ~ -.)))
+                                  possible_next_speeds[2:31,] %>% mutate(across(c(basepath_velo:lowest_next), ~ -.)) %>%
+                                                                  rename(lowest_next = highest_next, highest_next = lowest_next))
 
 
 set.seed(299)
@@ -100,7 +101,7 @@ for(fold in next_speed_folds) {
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.002041897
+### 0.00060472
 
 
 act <- c()
