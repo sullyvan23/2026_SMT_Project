@@ -66,7 +66,7 @@ for(fold in double_up_folds) {
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.7007668
+### 0.6988346
 
 
 last_dist_model <- gam(final_basepath_dist ~ te(time_left_ground, og_basepath_dist, k = 3), 
