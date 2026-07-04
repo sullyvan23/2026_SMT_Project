@@ -16,7 +16,7 @@ for(fold in final_doubled_folds) {
   print("-")
   train <- doubled_up_final[-fold, ]
   test <- doubled_up_final[fold, ]
-  model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo, 
+  model <- gam(safe_back ~ og_basepath_dist + ground_og_dist, 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
@@ -28,20 +28,21 @@ plot(model, page = 1)
 summary(model)
 
 
-final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo, 
+final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist, 
                            family = binomial, data = doubled_up_final)
 doubled_up_final <- doubled_up_final %>% ungroup() %>% mutate(final_doubled_prob = 1-predict(final_doubled_model, type = "response"))
 
-
-
-
-
-
-
-
 ####################################################################################################################################################################
 
+doubled_by_time <- doubled_up_data_sum_pred %>% filter(game_string != "y1_d172_OWV_VAS"  &  play_per_game != 226) %>%
+                                                mutate(time_left_ground = round(time_left_ground)) %>% group_by(safe_back, time_left_ground) %>%
+                                                summarise(og_basepath_dist = mean(og_basepath_dist),
+                                                          runner_basepath_velo = mean(runner_basepath_velo))
 
+doubled_by_time <- doubled_up_data_sum_2 %>% filter(game_string != "y1_d172_OWV_VAS"  &  play_per_game != 226) %>%
+                                                mutate(time_left_ground = round(time_left_ground)) %>% group_by(safe_back, time_left_ground) %>%
+                                                summarise(og_basepath_dist = mean(og_basepath_dist),
+                                                          runner_basepath_velo = mean(runner_basepath_velo))
 
 
 
