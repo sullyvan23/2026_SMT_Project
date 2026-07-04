@@ -48,10 +48,10 @@ model_play <- test_play[1,]
 
 for(i in 2:nrow(test_play)) {
   speeds <- seq(model_play$runner_basepath_velo[i-1] + 
-            round((as.numeric(predict(lowest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1]))) - model_play$runner_basepath_velo[i-1]) 
+            round((as.numeric(predict(lowest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])))) 
                   * (model_play$fps[i-1] / 0.05), 4),
             model_play$runner_basepath_velo[i-1] + 
-            round((as.numeric(predict(highest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1]))) - model_play$runner_basepath_velo[i-1]) 
+            round((as.numeric(predict(highest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])))) 
                   * (model_play$fps[i-1] / 0.05), 4),
             by = 0.0001)
   
