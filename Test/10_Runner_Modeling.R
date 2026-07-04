@@ -4,6 +4,7 @@ doubled_up_data_sum <- doubled_up_data_sum %>% mutate(key = paste0(game_string, 
 set.seed(926)
 double_up_folds <- groupKFold(doubled_up_data_sum$key, k = 5)
 double_up_folds_2 <- createFolds(doubled_up_data_sum$safe_back, k = 5)
+double_up_folds_3 <- groupKFold(doubled_up_data_sum$key, k = 2)
 
 ggplot(doubled_up_data_sum, aes(x = runner_og_dist, y = time_left_ground, color = safe_back)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
@@ -11,17 +12,17 @@ ggplot(doubled_up_data_sum, aes(x = runner_og_dist, y = time_left_ground, color 
 
 act <- c()
 pred <- c()
-for(fold in double_up_folds) {
+for(fold in double_up_folds_3) {
   print("-")
   train <- doubled_up_data_sum[-fold, ]
   test <- doubled_up_data_sum[fold, ]
-  model <- gam(safe_back ~ s(runner_basepath_velo, by = og_basepath_dist) + time_left_ground + ground_og_dist, 
+  model <- gam(safe_back ~ og_basepath_dist + runner_basepath_velo + time_left_ground + ground_og_dist, 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1251368
+### 0.03804737
 
 plot(model, page = 1)
 summary(model)
