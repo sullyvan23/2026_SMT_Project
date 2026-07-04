@@ -25,8 +25,10 @@ next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:a
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d155_VAS_PHD", play_per_game == 266)
 
 ##################################################################################################################################################################
-
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91)
+
+
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(doubled_up_model, newdata = test_play, type = "response"),
                                   tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
                                   advance_one_prob = predict(advance_one_model, newdata = test_play, type = "response"),
