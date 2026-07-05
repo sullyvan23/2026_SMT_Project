@@ -115,6 +115,7 @@ advance_one_data_sum_pred <- advance_one_data_sum %>% ungroup() %>% mutate(advan
 
 ####################################################################################################################################################################
 
+
 advance_two_data_sum <- advance_two_data_sum[,1:50] %>% left_join(advance_one_data_sum_pred[,c("game_string", "play_per_game", "player_id_br", "timestamp", "advance_one_prob")],
                                                                   by = c("game_string", "play_per_game", "player_id_br", "timestamp"))
 
