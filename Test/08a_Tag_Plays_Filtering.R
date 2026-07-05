@@ -32,7 +32,7 @@ summary(model)
 att_tag_model <- gam(att_tag ~ te(og_basepath_dist, ground_next_dist, k = 3), 
                      family = binomial, data = tag_end)
 
-tag_end <- tag_end %>%ungroup() %>% mutate(att_tag_prob = round(predict(att_tag_model, type = "response"), 3)) %>% relocate(att_tag_prob, .after = att_tag)
+tag_end <- tag_end %>% ungroup() %>% mutate(att_tag_prob = round(predict(att_tag_model, type = "response"), 3)) %>% relocate(att_tag_prob, .after = att_tag)
 
 tag_end <- tag_end %>% left_join(baserunners, by = c("game_string", "play_per_game")) %>%
                        mutate(others = first + second + third - 1) %>% relocate(others, .after = att_tag_prob)
@@ -96,6 +96,37 @@ tag_up_data_sum_3 <- tag_up_data_sum %>% mutate(basepath_decel_dist = ifelse(run
                                                 avg_velo_back = ifelse(sqrt(velo_back^2 + (0.2*(basepath_decel_dist/2)))/2 > 0.15, 0.15, sqrt(velo_back^2 + (0.2*(basepath_decel_dist/2)))/2),
                                                 time_back = (basepath_decel_dist/avg_velo_back) + basepath_decel_time)
 
+##############################################################################################################################################################################
+
+tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+
+
+set.seed(637)
+tag_end_folds <- createFolds(tag_end$succ_tag, k = 10)
+
+
+act <- c()
+pred <- c()
+for(fold in tag_end_folds) {
+  print("-")
+  train <- tag_end[-fold, ]
+  test <- tag_end[fold, ]
+  model <- gam(succ_tag ~ te(og_basepath_dist, ground_next_dist, k = 3) + caught_prob + speed_95_throw, 
+               family = binomial, data = train)
+  act <- c(act, test$succ_tag) 
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.153073
+
+plot(model, page = 1)
+summary(model)
+
+
+
+tag_end_model <- gam(succ_tag ~ te(og_basepath_dist, ground_next_dist, k = 3) + caught_prob + OF_ground_next_angle + speed_95_throw + speed_95_runner, 
+                     family = binomial, data = tag_end)
+summary(tag_end_model)
 
 
 
