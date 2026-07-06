@@ -29,9 +29,9 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, caught
 
 
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d105.5_OER_ANI", play_per_game == 120) ### tag, high caught prob whole time
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, high caught prob whole time
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
-                                  tag_up_prob = predict(tag_end_model, newdata = test_play, type = "response"),
+                                  tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
                                   advance_one_prob = predict(a1_model, newdata = test_play, type = "response"),
                                   advance_two_prob = predict(a2_model, newdata = test_play, type = "response"))
 test_play <- test_play %>% mutate(advance_three_prob = predict(a3_model, newdata = test_play, type = "response"))
@@ -66,7 +66,7 @@ for(i in 2:nrow(test_play)) {
                                                 basepath = og_basepath_dist - player_id_br + 12)
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
-                                                tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"),
+                                                tag_up_prob = predict(tag_up_model, newdata = next_time_check, type = "response"),
                                                 advance_one_prob = predict(a1_model, newdata = next_time_check, type = "response"),
                                                 advance_two_prob = predict(a2_model, newdata = next_time_check, type = "response"))
   next_time_check <- next_time_check %>% mutate(advance_three_prob = predict(a3_model, newdata = next_time_check, type = "response"))
