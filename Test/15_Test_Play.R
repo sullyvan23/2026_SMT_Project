@@ -41,8 +41,8 @@ test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                   tag = tag_up_prob * caught_prob,
                                   advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
-                                  advance_1 = (advance_one_prob - advance_two_prob) * (1 - caught_prob),
-                                  advance_2 = (advance_two_prob - advance_three_prob) * (1 - caught_prob),
+                                  advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
+                                  advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                   advance_3 = advance_three_prob * (1 - caught_prob))
 
 test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE))
@@ -79,8 +79,8 @@ for(i in 2:nrow(test_play)) {
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
                                                 advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
-                                                advance_1 = (advance_one_prob - advance_two_prob) * (1 - caught_prob),
-                                                advance_2 = (advance_two_prob - advance_three_prob) * (1 - caught_prob),
+                                                advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
+                                                advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                                 advance_3 = advance_three_prob * (1 - caught_prob))
   
   next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
