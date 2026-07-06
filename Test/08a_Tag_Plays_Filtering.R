@@ -39,13 +39,13 @@ tag_end <- tag_end %>% left_join(baserunners, by = c("game_string", "play_per_ga
 
 
 
-tag_end <- tag_end %>% filter(att_tag_prob >= 0.15)
+tag_end_2 <- tag_end %>% filter(!(att_tag_prob >= 0.15  &  att_tag == 0))
 
 ggplot(tag_end, aes(x = og_basepath_dist, y = runner_basepath_velo, color = att_tag)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
 
-tag_up_data_sum_2 <- tag_end[,1:3] %>% left_join(tag_up_data_sum, by = c("game_string", "play_per_game", "player_id_br"))
+tag_up_data_sum_2 <- tag_end_2[,1:3] %>% left_join(tag_up_data_sum, by = c("game_string", "play_per_game", "player_id_br"))
 
 ##############################################################################################################################################################################
 
@@ -96,6 +96,9 @@ tag_up_data_sum_3 <- tag_up_data_sum %>% mutate(basepath_decel_dist = ifelse(run
                                                 avg_velo_back = ifelse(sqrt(velo_back^2 + (0.2*(basepath_decel_dist/2)))/2 > 0.15, 0.15, sqrt(velo_back^2 + (0.2*(basepath_decel_dist/2)))/2),
                                                 time_back = (basepath_decel_dist/avg_velo_back) + basepath_decel_time)
 
+tag_up_data_sum_3 <- tag_up_data_sum_3 %>% mutate(get_back = ifelse(time_back < time_left_ground, 0, time_back - time_left_ground)) %>%
+                                                  relocate(get_back, .after = succ_tag)
+
 ##############################################################################################################################################################################
 
 tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
@@ -127,6 +130,40 @@ summary(model)
 tag_end_model <- gam(succ_tag ~ te(og_basepath_dist, ground_next_dist, k = 3) + caught_prob + OF_ground_next_angle + speed_95_throw + speed_95_runner, 
                      family = binomial, data = tag_end)
 summary(tag_end_model)
+
+##############################################################################################################################################################################
+
+tag_up_data_sum_try <- tag_up_data_sum %>% filter(time_left_ground >= 0.5, (time_left_ground/time_to_ground) <= 0.5)
+
+ggplot(tag_up_data_sum_try, aes(x = og_basepath_dist, y = time_left_ground, color = succ_tag)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+set.seed(298)
+try_tag_folds <- groupKFold(tag_up_data_sum_try$key, k = 5)
+
+
+act <- c()
+pred <- c()
+for(fold in try_tag_folds) {
+  print("-")
+  train <- tag_up_data_sum_try[-fold, ]
+  test <- tag_up_data_sum_try[fold, ]
+  model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + runner_basepath_velo, 
+               family = binomial, data = train)
+  act <- c(act, test$succ_tag) 
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.1751757
+
+plot(model, page = 1)
+summary(model)
+
+
+
+
+
 
 
 
