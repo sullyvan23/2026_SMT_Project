@@ -63,7 +63,7 @@ summary(model)
 
 
 
-tag_up_model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + runner_basepath_velo + OF_ground_next_angle + speed_95_throw + speed_95_runner, 
+tag_up_model <- gam(succ_tag ~ og_basepath_dist + time_left_ground + ground_next_dist + OF_ground_next_angle + speed_95_throw + speed_95_runner, 
                     family = binomial, data = tag_up_data_sum)
 summary(tag_up_model)
 plot(tag_up_model, page = 1)
