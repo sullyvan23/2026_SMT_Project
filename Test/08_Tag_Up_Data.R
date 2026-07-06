@@ -91,8 +91,15 @@ tag_up_data_sum <- tag_up_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo,
                                                  ~ weighted.mean(., if_caught_catch_prob)))
 tag_up_data_sum <- tag_up_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
-
 write.csv(tag_up_data_sum, "tag_up_data_sum.csv", row.names = FALSE)
+
+
+ggplot(tag_up_data_sum %>% filter(succ_tag == 1), aes(x = og_basepath_dist, y = time_left_ground, color = runner_basepath_velo)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
+
+ggplot(tag_up_data_sum, aes(x = og_basepath_dist, y = time_left_ground, color = succ_tag)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
 
 
 
