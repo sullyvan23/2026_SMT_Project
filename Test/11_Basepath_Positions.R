@@ -73,24 +73,22 @@ possible_next_speeds <- basepath_deviation %>% mutate(basepath_accel = basepath_
                                                       basepath_velo = abs(basepath_velo))
 
 possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(basepath_velo, 2),
-                                                      basepath_accel = round(basepath_accel, 2)) %>% 
-                                               group_by(basepath_velo, basepath_accel) %>% filter(!is.na(basepath_velo), fps == 50) %>%
+                                                        basepath_accel = round(basepath_accel, 2)) %>%
+                                               group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
                                                summarise(highest_next = quantile(next_accel_diff, probs = 0.95, na.rm = TRUE),
                                                          lowest_next = quantile(next_accel_diff, probs = 0.05, na.rm = TRUE),
-                                                         count = n())
+                                                         speed_95_runner = mean(speed_95_runner),
+                                                         count = n()) %>% 
+                                                 rename(runner_basepath_velo = basepath_velo,
+                                                        runner_basepath_accel = basepath_accel)
 
 possible_next_speeds <- possible_next_speeds %>% filter(count >= 100)
 
-ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = highest_next)) + 
+ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = highest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$highest_next))
 
-ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = lowest_next)) + 
+ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = lowest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$lowest_next))
-
-
-possible_next_speeds <- bind_rows(possible_next_speeds,
-                                  possible_next_speeds[2:28,] %>% mutate(across(c(basepath_velo:lowest_next), ~ -.)) %>%
-                                                                  rename(lowest_next = highest_next, highest_next = lowest_next))
 
 
 set.seed(299)
@@ -102,42 +100,43 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 5), 
+  model <- gam(highest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner, 
                data = train)
   act <- c(act, test$highest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.003519731
+### 0.003505663
 
 plot(model, pages = 1)
+summary(model)
 
 act <- c()
 pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5), 
+  model <- gam(lowest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner, 
                data = train)
   act <- c(act, test$lowest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.002911777
+### 0.002924959
 
 
 
-highest_next_velo_model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 5),  data = possible_next_speeds)
-lowest_next_velo_model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5),  data = possible_next_speeds)
+highest_next_velo_model <- gam(highest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner,  data = possible_next_speeds)
+lowest_next_velo_model <- gam(lowest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner,  data = possible_next_speeds)
 
 possible_next_speeds <- possible_next_speeds %>% ungroup() %>% mutate(pred_highest_next = predict(highest_next_velo_model),
                                                                       pred_lowest_next = predict(lowest_next_velo_model))
 
 
-ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = pred_highest_next)) + 
+ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = pred_highest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$pred_highest_next))
 
-ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = pred_lowest_next)) + 
+ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = pred_lowest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$pred_lowest_next))
 
 
