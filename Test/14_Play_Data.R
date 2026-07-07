@@ -69,7 +69,16 @@ all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, 
 all_plays_data_sum <- all_plays_data_sum %>% ungroup() %>% mutate(proj_batter_base = round(predict(batter_bases_model, newdata = all_plays_data_sum)))
 all_plays_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
                                              mutate(fps = time_left_ground - lead(time_left_ground),
-                                                    fps = ifelse(is.na(fps), lag(fps), fps))
+                                                    fps = ifelse(is.na(fps), lag(fps), fps),
+                                                    runner_basepath_velo = ifelse(row_number() == 1, 
+                                                                                  lead(runner_basepath_velo) + (lead(runner_basepath_velo) - lead(runner_basepath_velo, 2)), 
+                                                                                  runner_basepath_velo))
+
+all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_accel = (runner_basepath_velo - lag(runner_basepath_velo)) / ((timestamp - lag(timestamp))/1000),
+                                                    runner_basepath_accel = ifelse(row_number() == 1, 
+                                                                                   lead(runner_basepath_accel) + (lead(runner_basepath_accel) - lead(runner_basepath_accel, 2)), 
+                                                                                   runner_basepath_accel)) %>%
+                                             relocate(runner_basepath_accel, .after = runner_basepath_velo)
 
 write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 
