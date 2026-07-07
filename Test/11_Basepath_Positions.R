@@ -59,35 +59,38 @@ plot(basepath_pred_positions$field_x, basepath_pred_positions$field_y)
 
 basepath_deviation <- basepath_deviation %>% group_by(game_string, play_per_game, player_id_br) %>% 
                                              mutate(basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
-                                                    basepath_accel = (basepath_velo - lag(basepath_velo)) / ((timestamp - lag(timestamp))/1000),
-                                                    next_accel_diff = basepath_accel - lag(basepath_accel))
+                                                    basepath_velo_2 = lag(basepath_velo),
+                                                    basepath_velo_3 = lag(basepath_velo, 2),
+                                                    next_dist_diff = basepath - lag(basepath))
 
 basepath_deviation <- basepath_deviation %>% mutate(fps = timestamp - lag(timestamp))
-basepath_deviation <- basepath_deviation %>% filter(!is.na(next_accel_diff), abs(basepath - round(basepath)) > 0.05)
-
-plot(basepath_deviation$basepath_velo, basepath_deviation$basepath_accel)
+basepath_deviation <- basepath_deviation %>% filter(!is.na(basepath_velo_3), abs(basepath - round(basepath)) > 0.05)
 
 ####################################################################################################################################################################################
 
-possible_next_speeds <- basepath_deviation %>% mutate(basepath_accel = basepath_accel * sign(basepath_velo),
+possible_next_speeds <- basepath_deviation %>% mutate(basepath_velo_2 = basepath_velo_2 * sign(basepath_velo),
+                                                      basepath_velo_3 = basepath_velo_3 * sign(basepath_velo),
+                                                      dist_next_base = ifelse(basepath_velo > 0, ceiling(basepath) - basepath,
+                                                                                                 basepath - floor(basepath)),
                                                       basepath_velo = abs(basepath_velo))
 
-possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(basepath_velo, 2),
-                                                        basepath_accel = round(basepath_accel, 2)) %>%
-                                               group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
-                                               summarise(highest_next = quantile(next_accel_diff, probs = 0.95, na.rm = TRUE),
-                                                         lowest_next = quantile(next_accel_diff, probs = 0.05, na.rm = TRUE),
+possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(basepath_velo, 3),
+                                                        basepath_velo_2 = round(basepath_velo_2, 3),
+                                                        basepath_velo_3 = round(basepath_velo_3, 3)) %>%
+                                               group_by(basepath_velo, basepath_velo_2, basepath_velo_3) %>% filter(fps == 50) %>%
+                                               summarise(highest_next = quantile(next_dist_diff, probs = 0.95, na.rm = TRUE),
+                                                         lowest_next = quantile(next_dist_diff, probs = 0.05, na.rm = TRUE),
                                                          speed_95_runner = mean(speed_95_runner),
-                                                         count = n()) %>% 
-                                                 rename(runner_basepath_velo = basepath_velo,
-                                                        runner_basepath_accel = basepath_accel)
+                                                         dist_next_base = mean(dist_next_base),
+                                                         count = n())
 
-possible_next_speeds <- possible_next_speeds %>% filter(count >= 100)
+library(tidyr)
+possible_next_speeds <- possible_next_speeds %>% uncount(count)
 
-ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = highest_next)) + 
+ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_velo_2, color = highest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$highest_next))
 
-ggplot(possible_next_speeds, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = lowest_next)) + 
+ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_velo_2, color = lowest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$lowest_next))
 
 
@@ -98,15 +101,16 @@ next_speed_folds <- createFolds(possible_next_speeds$basepath_velo, k = 10)
 act <- c()
 pred <- c()
 for(fold in next_speed_folds) {
+  print("-")
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(highest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner, 
+  model <- gam(highest_next ~ te(basepath_velo, basepath_velo_2, basepath_velo_3, k = 4) + s(dist_next_base, k = 3), 
                data = train)
   act <- c(act, test$highest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.003505663
+### 0.001241472
 
 plot(model, pages = 1)
 summary(model)
@@ -116,13 +120,13 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(lowest_next ~ te(runner_basepath_velo, runner_basepath_accel, k = 5) + speed_95_runner, 
+  model <- gam(lowest_next ~ te(basepath_velo, basepath_velo_2, basepath_velo_3, k = 4) + dist_next_base, 
                data = train)
   act <- c(act, test$lowest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.002924959
+### 0.003259433
 
 
 
