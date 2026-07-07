@@ -52,20 +52,21 @@ test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * 
 model_play <- test_play[1,]
 
 for(i in 2:nrow(test_play)) {
-  speeds <- seq(model_play$runner_basepath_velo[i-1] + 
-            round((as.numeric(predict(lowest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])))) 
-                  * (model_play$fps[i-1] / 0.05), 4),
-            model_play$runner_basepath_velo[i-1] + 
-            round((as.numeric(predict(highest_next_velo_model, newdata = data.frame(basepath_velo = model_play$runner_basepath_velo[i-1])))) 
-                  * (model_play$fps[i-1] / 0.05), 4),
-            by = 0.0001)
+  accels <- seq(model_play$runner_basepath_accel[i-1] + 
+            round((as.numeric(predict(lowest_next_accel_diff_model, newdata = data.frame(runner_basepath_velo = abs(model_play$runner_basepath_velo[i-1]),
+                                                                                   runner_basepath_accel = model_play$runner_basepath_accel[i-1] * sign(model_play$runner_basepath_velo[i-1]),
+                                                                                   speed_95_runner = model_play$speed_95_runner[i-1])))) 
+                  * (model_play$fps[i-1] / 0.05), 3),
+            abs(model_play$runner_basepath_velo[i-1]) + 
+            round((as.numeric(predict(highest_next_accel_diff_model, newdata = data.frame(runner_basepath_velo = abs(model_play$runner_basepath_velo[i-1]),
+                                                                                    runner_basepath_accel = model_play$runner_basepath_accel[i-1] * sign(model_play$runner_basepath_velo[i-1]),
+                                                                                    speed_95_runner = model_play$speed_95_runner[i-1])))) 
+                  * (model_play$fps[i-1] / 0.05), 3),
+            by = 0.001) * sign(model_play$runner_basepath_velo[i-1])
   
-  next_time_check <- test_play[i,] %>% slice(rep(1,length(speeds)))
-  next_time_check$runner_basepath_velo <- speeds
-  next_time_check <- next_time_check %>% mutate(runner_basepath_velo = ifelse(runner_basepath_velo > 0.3, 0.3, runner_basepath_velo),
-                                                runner_basepath_velo = ifelse(runner_basepath_velo < -0.3, -0.3, runner_basepath_velo),
-                                                runner_basepath_velo = ifelse(runner_basepath_velo < -2 * model_play$og_basepath_dist[i-1], -2 * model_play$og_basepath_dist[i-1], 
-                                                                              runner_basepath_velo),
+  next_time_check <- test_play[i,] %>% slice(rep(1,length(accels)))
+  next_time_check$runner_basepath_accel <- accels
+  next_time_check <- next_time_check %>% mutate(runner_basepath_velo = model_play$runner_basepath_velo[i-1] + (runner_basepath_accel*fps),
                                                 og_basepath_dist = model_play$og_basepath_dist[i-1] + (runner_basepath_velo*fps),
                                                 og_basepath_dist = ifelse(og_basepath_dist < 0, 0, og_basepath_dist),
                                                 basepath = og_basepath_dist + player_id_br - 10)
@@ -83,8 +84,7 @@ for(i in 2:nrow(test_play)) {
                                                 advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                                 advance_3 = advance_three_prob * (1 - caught_prob))
   
-  next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
-                                                speed_percentile = row_number()/n()) %>%
+  next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE)) %>%
                                         arrange(desc(run_exp))
 
   model_play <- bind_rows(model_play, next_time_check[1,])
