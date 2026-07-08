@@ -30,10 +30,11 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
-
-
-
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d166_FNQ_PHD", play_per_game == 80) ### not caught easily
+
+
+
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_per_game == 230) ### not caught easily
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
                                   tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
                                   advance_one_prob = predict(a1_model, newdata = test_play, type = "response"),
@@ -46,10 +47,9 @@ test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
                                   advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                   advance_3 = advance_three_prob * (1 - caught_prob))
-
 test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
                                   ellipse = ((runner_basepath_velo^2 / (speed_95_runner/0.681818/95)^2) +
-                                            (runner_basepath_accel^2 / (speed_95_runner/0.681818/140)^2)))
+                                            (runner_basepath_accel^2 / (speed_95_runner/0.681818/135)^2)))
 
 plot(test_play$runner_basepath_velo, test_play$runner_basepath_accel)
 
@@ -58,10 +58,10 @@ plot(test_play$runner_basepath_velo, test_play$runner_basepath_accel)
 model_play <- test_play[1,]
 
 for(i in 2:nrow(test_play)) {
-  accels <- seq(round(model_play$runner_basepath_accel[i-1] + (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1]) -
-                      (((0.25 + model_play$ellipse[i-1]) * sign(model_play$runner_basepath_accel[i-1])) / (10 * (0.5/model_play$fps[i-1]))), 3),
-                round(model_play$runner_basepath_accel[i-1] + (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1]) +
-                      (((0.75 - (model_play$ellipse[i-1]) * sign(model_play$runner_basepath_accel[i-1]))) / (10 * (0.5/model_play$fps[i-1]))), 3),
+  accels <- seq(model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^5 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) -
+                      0.01, 3),
+                model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^5 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
+                      0.01, 3),
                 by = 0.001)
   
   next_time_check <- test_play[i,] %>% slice(rep(1,length(accels)))
@@ -72,7 +72,7 @@ for(i in 2:nrow(test_play)) {
                                                 basepath = og_basepath_dist + player_id_br - 10,
                                                 runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                 ellipse = ((runner_basepath_velo^2 / (speed_95_runner/0.681818/95)^2) +
-                                                          (runner_basepath_accel^2 / (speed_95_runner/0.681818/140)^2))) %>%
+                                                          (runner_basepath_accel^2 / (speed_95_runner/0.681818/135)^2))) %>%
                                          filter(ellipse <= 1)
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
