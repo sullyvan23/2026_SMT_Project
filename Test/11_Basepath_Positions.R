@@ -118,7 +118,7 @@ possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(ba
                                                group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
                                                summarise(basepath_accel_2 = mean(basepath_accel_2),
                                                          highest_next = quantile(next_accel_diff, probs = 0.85, na.rm = TRUE),
-                                                         lowest_next = quantile(next_accel_diff, probs = 0.25, na.rm = TRUE),
+                                                         lowest_next = quantile(next_accel_diff, probs = 0.15, na.rm = TRUE),
                                                          speed_95_runner = mean(speed_95_runner),
                                                          count = n())
 
