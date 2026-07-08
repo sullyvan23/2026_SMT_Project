@@ -69,6 +69,7 @@ basepath <- basepath %>% filter(!is.na(basepath_accel_2), !is.na(next_accel_diff
 
 basepath <- basepath %>% filter(rmse_x <= 0.05, rmse_y <= 0.05)
 
+basepath <- basepath %>% mutate(og_basepath_dist = basepath - player_id_br + 10)
 
 
 hist(basepath$rmse_x, breaks = 100)
@@ -76,6 +77,7 @@ hist(basepath$rmse_y, breaks = 100)
 
 plot(basepath$basepath_velo, basepath$basepath_accel)
 plot(basepath$basepath_accel, basepath$basepath_jerk)
+plot(basepath$og_basepath_dist, basepath$basepath_accel)
 
 ####################################################################################################################################################################################
 
