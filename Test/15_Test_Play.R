@@ -28,14 +28,14 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, caught
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d166_FNQ_PHD", play_per_game == 80) ### not caught easily
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_per_game == 230) ### not caught easily
-
-
-
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d168_BTL_ARN", play_per_game == 123) ### not caught easily
+
+
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 test_play <- test_play %>% mutate(time_since_hit = time_to_ground - time_left_ground) %>% relocate(time_since_hit, .after = time_left_ground)
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
                                   tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
@@ -78,6 +78,11 @@ for(i in 2:nrow(test_play)) {
                                                 ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                           (runner_basepath_accel^2 / max_accel^2)) %>%
                                          filter(ellipse <= 1)
+  
+  temp <- next_time_check %>% filter(-runner_basepath_velo <= log(1.5*og_basepath_dist + 1))
+  ifelse(nrow(temp) == 0,
+         next_time_check <- next_time_check %>% filter(runner_basepath_velo == max(runner_basepath_velo)),
+         next_time_check <- temp)
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
                                                 tag_up_prob = predict(tag_up_model, newdata = next_time_check, type = "response"),
