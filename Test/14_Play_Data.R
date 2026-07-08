@@ -79,11 +79,11 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_accel = (run
                                                                                    lead(runner_basepath_accel), 
                                                                                    runner_basepath_accel)) %>%
                                              relocate(runner_basepath_accel, .after = runner_basepath_velo)
-all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_jerk = (runner_basepath_accel - lag(runner_basepath_accel)) / ((timestamp - lag(timestamp))/1000),
-                                                    runner_basepath_jerk = ifelse(row_number() == 1, 
-                                                                                  lead(runner_basepath_jerk), 
-                                                                                  runner_basepath_accel)) %>%
-                                             relocate(runner_basepath_jerk, .after = runner_basepath_accel)
+all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_accel_2 = lag(runner_basepath_accel),
+                                                    runner_basepath_accel_2 = ifelse(row_number() == 1, 
+                                                                                   lead(runner_basepath_accel_2), 
+                                                                                   runner_basepath_accel_2)) %>%
+                                             relocate(runner_basepath_accel_2, .after = runner_basepath_accel)
 
 write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 
