@@ -79,7 +79,7 @@ for(i in 2:nrow(test_play)) {
                                                           (runner_basepath_accel^2 / max_accel^2)) %>%
                                          filter(ellipse <= 1)
   
-  temp <- next_time_check %>% filter(-runner_basepath_velo <= log(1.5*og_basepath_dist + 1))
+  temp <- next_time_check %>% filter(-3*runner_basepath_velo <= og_basepath_dist)
   ifelse(nrow(temp) == 0,
          next_time_check <- next_time_check %>% filter(runner_basepath_velo == max(runner_basepath_velo)),
          next_time_check <- temp)
