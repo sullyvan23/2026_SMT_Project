@@ -117,12 +117,13 @@ possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(ba
                                                         basepath_accel = round(basepath_accel, 2)) %>%
                                                group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
                                                summarise(basepath_accel_2 = mean(basepath_accel_2),
-                                                         highest_next = quantile(next_accel_diff, probs = 0.85, na.rm = TRUE),
-                                                         lowest_next = quantile(next_accel_diff, probs = 0.15, na.rm = TRUE),
+                                                         highest_next = quantile(next_accel_diff, probs = 0.95, na.rm = TRUE),
+                                                         lowest_next = quantile(next_accel_diff, probs = 0.05, na.rm = TRUE),
                                                          speed_95_runner = mean(speed_95_runner),
                                                          count = n())
 
-possible_next_speeds <- possible_next_speeds %>% filter(count >= 20)
+possible_next_speeds <- possible_next_speeds %>% filter(count >= 50)
+
 
 ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = highest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$highest_next))
