@@ -61,7 +61,8 @@ basepath <- basepath_deviation %>% group_by(game_string, play_per_game, player_i
                                       basepath_accel = (basepath_velo - lag(basepath_velo)) / ((timestamp - lag(timestamp))/1000),
                                       basepath_accel_2 = lag(basepath_accel),
                                       next_accel_diff = lead(basepath_accel) - basepath_accel,
-                                      next_velo_diff = lead(basepath_velo) - basepath_velo)
+                                      next_velo_diff = lead(basepath_velo) - basepath_velo,
+                                      accel_diff_diff = next_accel_diff - (basepath_accel - basepath_accel_2))
 
 basepath <- basepath %>% mutate(fps = timestamp - lag(timestamp))
 basepath <- basepath %>% filter(!is.na(basepath_accel_2), !is.na(next_accel_diff), abs(basepath - round(basepath)) > 0.05)
@@ -109,6 +110,7 @@ ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = 
 
 possible_next_speeds <- basepath %>% mutate(next_velo_diff = next_velo_diff * sign(basepath_velo),
                                             next_accel_diff = next_accel_diff * sign(basepath_velo),
+                                            accel_diff_diff = accel_diff_diff * sign(basepath_velo),
                                             basepath_accel = basepath_accel * sign(basepath_velo),
                                             basepath_accel_2 = basepath_accel_2 * sign(basepath_velo),
                                             basepath_velo = abs(basepath_velo))
@@ -117,8 +119,8 @@ possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(ba
                                                         basepath_accel = round(basepath_accel, 2)) %>%
                                                group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
                                                summarise(basepath_accel_2 = mean(basepath_accel_2),
-                                                         highest_next = quantile(next_accel_diff, probs = 0.95, na.rm = TRUE),
-                                                         lowest_next = quantile(next_accel_diff, probs = 0.05, na.rm = TRUE),
+                                                         highest_next = quantile(accel_diff_diff, probs = 0.95, na.rm = TRUE),
+                                                         lowest_next = quantile(accel_diff_diff, probs = 0.05, na.rm = TRUE),
                                                          speed_95_runner = mean(speed_95_runner),
                                                          count = n())
 
@@ -142,13 +144,13 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 4), 
+  model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 3), 
                data = train)
   act <- c(act, test$highest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.002071038
+### 0.0007685658
 
 plot(model, pages = 1)
 summary(model)
@@ -158,18 +160,18 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5), 
+  model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 4), 
                data = train)
   act <- c(act, test$lowest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.001493879
+### 0.0006629285
 
 
 
-highest_next_accel_diff_model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 4),  data = possible_next_speeds)
-lowest_next_accel_diff_model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5),  data = possible_next_speeds)
+highest_next_accel_diff_model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 3),  data = possible_next_speeds)
+lowest_next_accel_diff_model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 4),  data = possible_next_speeds)
 
 possible_next_speeds <- possible_next_speeds %>% ungroup() %>% mutate(pred_highest_next = predict(highest_next_accel_diff_model),
                                                                       pred_lowest_next = predict(lowest_next_accel_diff_model))
