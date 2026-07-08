@@ -83,8 +83,8 @@ possible_next_speeds <- possible_next_speeds %>% mutate(basepath_velo = round(ba
                                                         basepath_accel = round(basepath_accel, 2)) %>%
                                                group_by(basepath_velo, basepath_accel) %>% filter(fps == 50) %>%
                                                summarise(basepath_jerk = mean(basepath_jerk),
-                                                         highest_next = quantile(next_accel_diff, probs = 0.9, na.rm = TRUE),
-                                                         lowest_next = quantile(next_accel_diff, probs = 0.1, na.rm = TRUE),
+                                                         highest_next = quantile(next_accel_diff, probs = 0.8, na.rm = TRUE),
+                                                         lowest_next = quantile(next_accel_diff, probs = 0.2, na.rm = TRUE),
                                                          speed_95_runner = mean(speed_95_runner),
                                                          count = n())
 
@@ -107,13 +107,13 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(highest_next ~ s(basepath_velo, k = 3) + s(basepath_accel, k = 3) + s(basepath_jerk, k = 3), 
+  model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 4), 
                data = train)
   act <- c(act, test$highest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.003081373
+### 0.002071038
 
 plot(model, pages = 1)
 summary(model)
@@ -123,18 +123,18 @@ pred <- c()
 for(fold in next_speed_folds) {
   train <- possible_next_speeds[-fold, ]
   test <- possible_next_speeds[fold, ]
-  model <- gam(lowest_next ~ s(basepath_velo, k = 3) + s(basepath_accel, k = 3) + s(basepath_jerk, k = 3), 
+  model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5), 
                data = train)
   act <- c(act, test$lowest_next) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 0.001739601
+### 0.001493879
 
 
 
-highest_next_accel_diff_model <- gam(highest_next ~ s(basepath_velo, k = 3) + s(basepath_accel, k = 3) + s(basepath_jerk, k = 3),  data = possible_next_speeds)
-lowest_next_accel_diff_model <- gam(lowest_next ~ s(basepath_velo, k = 3) + s(basepath_accel, k = 3) + s(basepath_jerk, k = 3),  data = possible_next_speeds)
+highest_next_accel_diff_model <- gam(highest_next ~ te(basepath_velo, basepath_accel, k = 4),  data = possible_next_speeds)
+lowest_next_accel_diff_model <- gam(lowest_next ~ te(basepath_velo, basepath_accel, k = 5),  data = possible_next_speeds)
 
 possible_next_speeds <- possible_next_speeds %>% ungroup() %>% mutate(pred_highest_next = predict(highest_next_accel_diff_model),
                                                                       pred_lowest_next = predict(lowest_next_accel_diff_model))
@@ -145,3 +145,62 @@ ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = 
 
 ggplot(possible_next_speeds, aes(x = basepath_velo, y = basepath_accel, color = pred_lowest_next)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(possible_next_speeds$pred_lowest_next))
+
+####################################################################################################################################################################################
+
+basepath_last_velos <- basepath %>% mutate(basepath_velo_2 = lag(basepath_velo),
+                                           basepath_velo_3 = lag(basepath_velo, 2),
+                                           velo_diff = lead(basepath_velo) - basepath_velo) %>%
+                                    filter(!is.na(basepath_velo_3), !is.na(velo_diff))
+basepath_last_velos <- basepath_last_velos %>% mutate(basepath_velo_2 = (round(basepath_velo_2, 2) * sign(basepath_velo)) - round(abs(basepath_velo), 2),
+                                                      basepath_velo_3 = (round(basepath_velo_3, 2) * sign(basepath_velo)) - round(abs(basepath_velo), 2),
+                                                      basepath_velo = round(abs(basepath_velo), 2)) %>%
+                                               group_by(basepath_velo, basepath_velo_2, basepath_velo_3) %>%
+                                               summarise(high_diff = quantile(velo_diff, probs = 0.9, na.rm = TRUE),
+                                                         low_diff = quantile(velo_diff, probs = 0.1, na.rm = TRUE),
+                                                         count = n())
+
+basepath_last_velos <- basepath_last_velos %>% filter(count > 20)
+
+ggplot(basepath_last_velos, aes(x = basepath_velo, y = basepath_velo_2, color = high_diff)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(basepath_last_velos$high_diff))
+ggplot(basepath_last_velos, aes(x = basepath_velo, y = basepath_velo_2, color = low_diff)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = mean(basepath_last_velos$low_diff))
+
+
+
+
+
+set.seed(299)
+next_speed_folds <- createFolds(basepath_last_velos$high_diff, k = 10)
+
+
+act <- c()
+pred <- c()
+for(fold in next_speed_folds) {
+  train <- basepath_last_velos[-fold, ]
+  test <- basepath_last_velos[fold, ]
+  model <- gam(high_diff ~ s(basepath_velo, k = 3) + te(basepath_velo_2, basepath_velo_3, k = 3), 
+               data = train)
+  act <- c(act, test$high_diff) 
+  pred <- c(pred, predict(model, newdata = test))
+}
+RMSE(act, pred)
+### 0.001818805
+
+plot(model, pages = 1)
+summary(model)
+
+act <- c()
+pred <- c()
+for(fold in next_speed_folds) {
+  train <- basepath_last_velos[-fold, ]
+  test <- basepath_last_velos[fold, ]
+  model <- gam(low_diff ~ s(basepath_velo, k = 3) + te(basepath_velo_2, basepath_velo_3, k = 3), 
+               data = train)
+  act <- c(act, test$low_diff) 
+  pred <- c(pred, predict(model, newdata = test))
+}
+RMSE(act, pred)
+### 0.002370982
+
