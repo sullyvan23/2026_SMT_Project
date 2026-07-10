@@ -30,7 +30,7 @@ ellipse <- expand.grid(runner_basepath_velo = seq(-0.3, 0.3, by = 0.01),
                             (runner_basepath_accel^2 / 0.2^2)) %>%
            filter(ellipse <= 1)
 
-ellipse <- ellipse %>% mutate(check = ellipse^3 * -runner_basepath_velo/15)
+ellipse <- ellipse %>% mutate(check = ellipse * -runner_basepath_velo/6)
 
 ggplot(ellipse, aes(x = runner_basepath_velo, y = runner_basepath_accel, color = check)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white")
@@ -66,11 +66,10 @@ max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.
 max_accel <- max(test_play$runner_basepath_accel, test_play$speed_95_runner[1]/0.681818/140)
 test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
-                                            (runner_basepath_accel^2 / max_accel^2),
-                                  back_ellipse = ifelse(runner_basepath_velo <= 0,
-                                                        (runner_basepath_velo^2 / max_speed^2) +
-                                                        ((og_basepath_dist-0.525)^2 / 0.5^2),
-                                                        0))
+                                            (runner_basepath_accel^2 / max_accel^2) +
+                                            ifelse(og_basepath_dist <= 0.5  &  runner_basepath_velo <= 0,
+                                                   (og_basepath_dist-0.525)^2 / 0.5^2,
+                                                    0))
 
 ##################################################################################################################################################################
 
@@ -78,36 +77,29 @@ model_play <- test_play[1,]
 fps <- model_play$fps[1]
 
 for(i in 2:nrow(test_play)) {
-  accels <- seq(model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^3 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
-                             model_play$back_ellipse[i-1]^3 * (0.5 - model_play$og_basepath_dist[i-1]),
-                             model_play$ellipse[i-1]^3 * -(model_play$runner_basepath_velo[i-1]/15)) -
-                      ifelse(model_play$time_since_hit[i-1] <= 0.2, 
-                             (0.01 * (fps/0.05)) * (model_play$time_since_hit[i-1]/0.2),  (0.01 * (fps/0.05)) ), 
-                                                              3),
-                model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^3 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
-                             model_play$back_ellipse[i-1]^3 * (0.5 - model_play$og_basepath_dist[i-1]),
-                             model_play$ellipse[i-1]^3 * -(model_play$runner_basepath_velo[i-1]/15)) +
-                      ifelse(model_play$time_since_hit[i-1] <= 0.2, 
-                             (0.01 * (fps/0.05)) * (model_play$time_since_hit[i-1]/0.2),  (0.01 * (fps/0.05)) ), 
-                                                              3),
-                by = 0.001)
+  accels <- seq(model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
+                      model_play$ellipse[i-1]^1 * -(model_play$runner_basepath_velo[i-1]/60) -
+                      (0.003 * (fps/0.05)), 
+                      3),
+                model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
+                      model_play$ellipse[i-1]^1 * -(model_play$runner_basepath_velo[i-1]/60) +
+                      (0.003 * (fps/0.05)), 
+                      3),
+                by = 0.0005)
   
   next_time_check <- test_play[i,] %>% slice(rep(1,length(accels)))
   next_time_check$runner_basepath_accel <- accels
   next_time_check <- next_time_check %>% mutate(runner_basepath_velo = model_play$runner_basepath_velo[i-1] + (runner_basepath_accel*fps),
                                                 og_basepath_dist = model_play$og_basepath_dist[i-1] + (runner_basepath_velo*fps),
-                                                og_basepath_dist = ifelse(og_basepath_dist < 0, 0, og_basepath_dist),
+                                                og_basepath_dist = ifelse(og_basepath_dist < 0.025, 0.025, og_basepath_dist),
                                                 basepath = og_basepath_dist + player_id_br - 10,
                                                 runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                 ellipse = (runner_basepath_velo^2 / max_speed^2) +
-                                                          (runner_basepath_accel^2 / max_accel^2),
-                                                back_ellipse = ifelse(runner_basepath_velo <= 0,
-                                                                      (runner_basepath_velo^2 / max_speed^2) +
-                                                                      ((og_basepath_dist-0.525)^2 / 0.5^2),
-                                                                      0)) %>% 
-                                          filter(ellipse <= 1, back_ellipse <= 1)
+                                                          (runner_basepath_accel^2 / max_accel^2) +
+                                                          ifelse(og_basepath_dist <= 0.5  &  runner_basepath_velo <= -50,
+                                                                 (og_basepath_dist-0.525)^2 / 0.5^2,
+                                                                  0)) %>% 
+                                          filter(ellipse <= 1)
   
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
@@ -123,11 +115,15 @@ for(i in 2:nrow(test_play)) {
                                                 advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                                 advance_3 = advance_three_prob * (1 - caught_prob))
   
-  next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE)) %>%
+  next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
+                                                jerk_now = row_number() / nrow(next_time_check)) %>%
                                         arrange(desc(run_exp))
 
   model_play <- bind_rows(model_play, next_time_check[1,])
 }
+plot(ellipse$runner_basepath_velo, ellipse$runner_basepath_accel, col = "black")
+points(test_play$runner_basepath_velo, test_play$runner_basepath_accel, col = "blue")
+points(model_play$runner_basepath_velo, model_play$runner_basepath_accel, col = "red")
 
 
 plot(-test_play$time_left_ground, test_play$basepath, col = "black", ylim = c(min(test_play$basepath,model_play$basepath), max(test_play$basepath,model_play$basepath)))
