@@ -68,7 +68,8 @@ test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * 
                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                             (runner_basepath_accel^2 / max_accel^2),
                                   back_ellipse = ifelse(runner_basepath_velo <= 0,
-                                                        (og_basepath_dist - 0.525)^2 / 0.5^2,
+                                                        (runner_basepath_velo^2 / max_speed^2) +
+                                                        ((og_basepath_dist-0.525)^2 / 0.5^2),
                                                         0))
 
 ##################################################################################################################################################################
@@ -78,12 +79,16 @@ fps <- model_play$fps[1]
 
 for(i in 2:nrow(test_play)) {
   accels <- seq(model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^3 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      (model_play$ellipse[i-1]^3 * -model_play$runner_basepath_velo[i-1]/15) -
+                      ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
+                             model_play$back_ellipse[i-1]^3 * (0.5 - model_play$og_basepath_dist[i-1]),
+                             model_play$ellipse[i-1]^3 * -(model_play$runner_basepath_velo[i-1]/15)) -
                       ifelse(model_play$time_since_hit[i-1] <= 0.2, 
                              (0.01 * (fps/0.05)) * (model_play$time_since_hit[i-1]/0.2),  (0.01 * (fps/0.05)) ), 
                                                               3),
                 model_play$runner_basepath_accel[i-1] + round(((1-model_play$ellipse[i-1])^3 * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      (model_play$ellipse[i-1]^3 * -model_play$runner_basepath_velo[i-1]/15) +
+                      ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
+                             model_play$back_ellipse[i-1]^3 * (0.5 - model_play$og_basepath_dist[i-1]),
+                             model_play$ellipse[i-1]^3 * -(model_play$runner_basepath_velo[i-1]/15)) +
                       ifelse(model_play$time_since_hit[i-1] <= 0.2, 
                              (0.01 * (fps/0.05)) * (model_play$time_since_hit[i-1]/0.2),  (0.01 * (fps/0.05)) ), 
                                                               3),
@@ -97,10 +102,12 @@ for(i in 2:nrow(test_play)) {
                                                 basepath = og_basepath_dist + player_id_br - 10,
                                                 runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                 ellipse = (runner_basepath_velo^2 / max_speed^2) +
-                                                          (runner_basepath_accel^2 / max_accel^2) +
-                                                          ifelse(og_basepath_dist <= 0,
-                                                                 (og_basepath_dist - 0.525)^2 / 0.5^2, 0)) %>% 
-                                          filter(ellipse <= 1)
+                                                          (runner_basepath_accel^2 / max_accel^2),
+                                                back_ellipse = ifelse(runner_basepath_velo <= 0,
+                                                                      (runner_basepath_velo^2 / max_speed^2) +
+                                                                      ((og_basepath_dist-0.525)^2 / 0.5^2),
+                                                                      0)) %>% 
+                                          filter(ellipse <= 1, back_ellipse <= 1)
   
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
