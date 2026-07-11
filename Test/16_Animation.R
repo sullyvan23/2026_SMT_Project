@@ -1,0 +1,136 @@
+
+model_positions <- model_play %>% select(game_string, play_per_game, timestamp, player_id_br, basepath) %>%
+                                  rename(player_id = player_id_br) %>%
+                                  mutate(player_id = player_id + 0.5,
+                                         field_x = predict(basepath_x_model, newdata = model_positions),
+                                         field_y = predict(basepath_y_model, newdata = model_positions)) %>%
+                                  select(-basepath)
+animate_positions <- bind_rows(player_positions %>% filter(game_string == model_play$game_string[1],
+                                                           play_per_game == model_play$play_per_game[1]), 
+                               model_positions) %>% arrange(timestamp, player_id)
+
+
+###########################################################################################################################################################################################
+animate_model <- function() {
+  
+  # Set the specs for the gif we want to create (lower res to make it run quicker)
+  options(gganimate.dev_args = list(width = 3, height = 3, units = 'in', res = 120))
+  
+  #' #ometimes the frames per second at different stadiums can vary (30 fps vs 50 fps)
+  #' this finds an even rounding interval and calculates fps from the data explicitly
+  fps <- animate_positions %>%
+    # Double check columns are numeric
+    mutate(across(c(timestamp, field_x, field_y, player_id),
+                  as.numeric)) %>%
+    # Filter for only Players
+    filter(player_id < 14) %>%
+    # Calculate Frames Per Second by player's position
+    mutate(fps = timestamp - lag(timestamp), 
+           .by = "player_id")  %>%
+    # Calculate Frames Per Second and save as a vector
+    count(fps) %>% slice_max(n) %>% pull(fps)
+  
+  # Find the time of the pitch
+  time_of_pitch <-  ball_events %>%
+    filter(game_string == animate_positions$game_string[1] &
+             play_per_game == animate_positions$play_per_game[1] &
+             ball_eventcode == 1) %>%
+    collect() %>%
+    pull(timestamp)
+  
+  # Get the Ball Tracking Data
+  ball_tracking_data <- ball_positions %>%
+    ## Filter to correct game
+    filter(game_string == animate_positions$game_string[1] &
+             play_per_game == animate_positions$play_per_game[1]) %>%
+    ## Collect from Arrow
+    collect() %>%
+    ## Add on a type and player_id column to match with player_tracking_data
+    mutate(type = "ball", 
+           player_id = NA) %>% 
+    ## Reorder and Rename Columns
+    dplyr::select(game_string:timestamp, player_id, type, position_x = ball_position_x,
+           position_y = ball_position_y, position_z = ball_position_z, everything())
+  
+  # Get the Player Tracking Data
+  player_tracking_data <- animate_positions %>%
+    collect() %>%
+    ## Convert player_id to numeric
+    mutate(player_id = as.numeric(player_id)) %>%
+    ## Calculate type and put position_z as NA
+    mutate(type = case_when((player_id %% 1) == 0.5 ~  "model",
+                            player_id <= 9 ~ "defense",
+                            between(player_id, 10, 13) ~ "offense",
+                            between(player_id, 14, 17) ~ "umpire",
+                            player_id %in% c(18, 19) ~ "coach"),
+           position_z = NA
+    ) %>%
+    ## Reorder and Rename Columns
+    dplyr::select(game_string:timestamp, player_id, type, position_x = field_x,
+           position_y = field_y, position_z, everything())
+  
+  # Combine all tracking data into 1 data frame
+  tracking_data <- bind_rows(player_tracking_data, ball_tracking_data) %>% 
+    ## Convert timestamps and positions to numeric
+    mutate(across(c(timestamp, position_x, position_y, position_z), 
+                  as.numeric)) %>%
+    ## Order data chronologically
+    arrange(timestamp) %>%
+    ## Align timestamps to account for mechanical measurement error
+    mutate(timestamp_adj = plyr::round_any(timestamp, fps)) %>%
+    ## Start the animation to start when the pitch is thrown
+    filter(timestamp >= time_of_pitch) %>%
+    ## Create a frame_id for animation
+    mutate(frame_id = match(timestamp_adj, unique(timestamp_adj)))
+  
+  # Make Field and Plot Points
+  p <- geom_baseball(league = "MiLB") +
+    ## Plot all people as dots
+    geom_point(data = tracking_data %>% filter(type != "ball"),
+               aes(x = position_x, y = position_y, fill = type),
+               shape = 21, size = 3,
+               show.legend = F) +
+    ## Label on top of the people dots 
+    geom_text(data = tracking_data %>% filter(type == "defense"),
+              aes(x = position_x, y = position_y, label = player_id),
+              color = "black", size = 2,
+              show.legend = F) +
+    ## Plot the ball
+    geom_point(data = tracking_data %>%
+                 filter(type == "ball"),
+               aes(x = position_x, y = position_y,
+                   size = position_z),
+               fill = "white",
+               shape = 21,
+               show.legend = F) +
+    ## Specify colors for people
+    scale_fill_manual(values = c("offense" = "#005AB5",
+                                 "defense" = "#FEFE62",
+                                 "coach" = "#1A85FF",
+                                 "umpire" = "black",
+                                 "model" = "#39FF14")) +
+    ## Specify when to transition
+    transition_time(frame_id) +
+    ## Annotate with the Play and Game ID
+    annotate("text", x = c(150, 0), y = c(10, 400), color = "white",
+             label = c(paste("Play:", animate_positions$play_per_game[1]), paste("Game :", animate_positions$game_string[1]))) +
+    ## Add Shadows
+    shadow_wake(0.1, exclude_layer = c(1:16))
+  
+  # Find the number of frames
+  number_of_frames <-  max(tracking_data$frame_id)
+  
+  # Animate
+  p2 <- animate(p, fps = fps, nframes = number_of_frames)
+  
+  return(p2)
+}
+###########################################################################################################################################################################################
+
+
+
+
+
+
+
+
