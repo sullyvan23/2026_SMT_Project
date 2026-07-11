@@ -1,13 +1,15 @@
 
-model_positions <- model_play %>% select(game_string, play_per_game, timestamp, player_id_br, basepath) %>%
+animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, player_id_br, basepath) %>%
                                   rename(player_id = player_id_br) %>%
                                   mutate(player_id = player_id + 0.5,
-                                         field_x = predict(basepath_x_model, newdata = model_positions),
-                                         field_y = predict(basepath_y_model, newdata = model_positions)) %>%
+                                         field_x = predict(basepath_x_model, newdata = animate_positions),
+                                         field_y = predict(basepath_y_model, newdata = animate_positions)) %>%
                                   select(-basepath)
-animate_positions <- bind_rows(player_positions %>% filter(game_string == model_play$game_string[1],
-                                                           play_per_game == model_play$play_per_game[1]), 
-                               model_positions) %>% arrange(timestamp, player_id)
+animate_positions <- bind_rows(animate_positions,
+                               player_positions %>% filter(game_string == model_play$game_string[1],
+                                                           play_per_game == model_play$play_per_game[1])) %>% 
+                      arrange(timestamp, player_id)
+animate_model()
 
 
 ###########################################################################################################################################################################################
@@ -126,11 +128,3 @@ animate_model <- function() {
   return(p2)
 }
 ###########################################################################################################################################################################################
-
-
-
-
-
-
-
-
