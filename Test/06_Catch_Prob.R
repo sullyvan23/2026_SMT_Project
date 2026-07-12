@@ -147,7 +147,7 @@ write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
 ####################################################################################################################################################################
 
 caught_by_prob_data <- catch_prob_data %>% select(game_string, play_per_game, timestamp, player_id_event, caught, player_id, catch_odds)
-caught_by_prob_data <- caught_by_prob_data%>% pivot_wider(names_from = player_id, values_from = catch_odds)
+caught_by_prob_data <- caught_by_prob_data %>% pivot_wider(names_from = player_id, values_from = catch_odds)
 
 caught_by_prob_data <- caught_by_prob_data %>% rename(b1 = "3", b2 = "4", b3 = "5", ss = "6",
                                                       lf = "7", cf = "8", rf = "9")
