@@ -1,4 +1,5 @@
 
+load("~/SMT26/new.Rdata")
 all_plays_data_sum <- bind_rows(doubled_up_data_sum, tag_up_data_sum, advance_one_data_sum)
 all_plays_data_sum <- all_plays_data_sum %>% distinct(game_string, play_per_game, player_id_br, timestamp, .keep_all = TRUE)
 
@@ -53,6 +54,10 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x_OF 
                                                     OF_ground_next3_dist = ((OF_next3_x_dist * OF_ground_x_dist) + (OF_next3_y_dist * OF_ground_y_dist)) / 
                                                                           OF_next3_dist,
                                                     OF_ground_next3_angle = acos(OF_ground_next3_dist / OF_ground_dist))
+all_plays_data_sum <- cbind(all_plays_data_sum, predict(batter_bases_model, newdata = all_plays_data_sum, type = "response"))
+all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...83",
+                                                    batter_2 = "...84",
+                                                    batter_3 = "...85")
 
 ### NEED
 ### time_to_ground, time_left_ground, basepath, og_basepath_dist, runner_basepath_velo
@@ -60,13 +65,11 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x_OF 
 ### OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle, 
 ### speed_95_runner, speed_95_throw, caught_prob
 
-
 all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, timestamp, player_id_br,
                                                     time_to_ground, time_left_ground, ground_x, ground_y, 
                                                     basepath, og_basepath_dist, runner_basepath_velo, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
                                                     OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
-                                                    speed_95_runner, speed_95_throw, caught_prob)
-all_plays_data_sum <- all_plays_data_sum %>% ungroup() %>% mutate(proj_batter_base = round(predict(batter_bases_model, newdata = all_plays_data_sum)))
+                                                    speed_95_runner, speed_95_throw, caught_prob, batter_1, batter_2, batter_3)
 all_plays_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
                                              mutate(fps = time_left_ground - lead(time_left_ground),
                                                     fps = ifelse(is.na(fps), lag(fps), fps),
@@ -90,6 +93,7 @@ write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 ##################################################################################################################################################################################
 
 one_on_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, timestamp) %>% filter(n() == 1) %>% ungroup()
+one_on_data_sum <- cbind(one_on_data_sum)
 
 ### dataset with run expectancies of situations
 one_on_run_exps <- read_csv("one_on_run_exps.csv")
