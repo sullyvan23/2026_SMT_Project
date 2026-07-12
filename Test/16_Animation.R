@@ -1,5 +1,5 @@
 
-animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, player_id_br, basepath)
+animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
                                            mutate(player_id = player_id + 0.5,
                                                   field_x = predict(basepath_x_model, newdata = animate_positions),
@@ -9,6 +9,13 @@ animate_positions <- bind_rows(animate_positions,
                                player_positions %>% filter(game_string == model_play$game_string[1],
                                                            play_per_game == model_play$play_per_game[1])) %>% 
                       arrange(timestamp, player_id)
+animate_positions <- animate_positions %>% group_by(timestamp) %>%
+                                           mutate(caught_prob = ifelse(!is.na(caught_prob), 
+                                                                       paste0(as.character( pmax(pmin(5*round(caught_prob*20), 95), 5) ),
+                                                                                           "%"),
+                                                                       "")) %>% 
+                                            ungroup()
+
 animate_model()
 
 
@@ -105,6 +112,11 @@ animate_model <- function() {
                fill = "white",
                shape = 21,
                show.legend = F) +
+    ## show catch probability
+    geom_text(data = tracking_data %>% filter(caught_prob != ""),
+               aes(x = -150, y = 10,
+                   label = paste0("Catch Prob: ", caught_prob)),
+               color = "white", size = 3, show.legend = F) +
     ## Specify colors for people
     scale_fill_manual(values = c("offense" = "#005AB5",
                                  "defense" = "#FEFE62",
@@ -115,9 +127,8 @@ animate_model <- function() {
     transition_time(frame_id) +
     ## Annotate with the Play and Game ID
     annotate("text", x = c(150, 0), y = c(10, 400), color = "white",
-             label = c(paste("Play:", animate_positions$play_per_game[1]), paste("Game :", animate_positions$game_string[1]))) +
-    ## Add Shadows
-    shadow_wake(0.1, exclude_layer = c(1:16))
+             label = c(paste("Play:", animate_positions$play_per_game[1]), 
+                       paste("Game :", animate_positions$game_string[1])))
   
   # Find the number of frames
   number_of_frames <-  max(tracking_data$frame_id)
