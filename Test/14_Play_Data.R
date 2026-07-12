@@ -1,5 +1,4 @@
 
-load("~/SMT26/new.Rdata")
 all_plays_data_sum <- bind_rows(doubled_up_data_sum, tag_up_data_sum, advance_one_data_sum)
 all_plays_data_sum <- all_plays_data_sum %>% distinct(game_string, play_per_game, player_id_br, timestamp, .keep_all = TRUE)
 
@@ -93,13 +92,17 @@ write.csv(all_plays_data_sum, "all_plays_data_sum.csv", row.names = FALSE)
 ##################################################################################################################################################################################
 
 one_on_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, timestamp) %>% filter(n() == 1) %>% ungroup()
-one_on_data_sum <- cbind(one_on_data_sum)
+one_on_data_sum <- one_on_data_sum %>% pivot_longer(cols = batter_1:batter_3,
+                                                    names_to = "proj_batter_base",
+                                                    values_to = "prob")
 
 ### dataset with run expectancies of situations
 one_on_run_exps <- read_csv("one_on_run_exps.csv")
 one_on_data_sum <- one_on_data_sum %>% left_join(one_on_run_exps, by = c("player_id_br", "proj_batter_base"))
 
-
+one_on_data_sum <- one_on_data_sum %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>% 
+                                       mutate(across(c(d_sit_re:a3_sit_re), ~ weighted.mean(., prob))) %>%
+                                       slice(1) %>% ungroup()
 
 
 
