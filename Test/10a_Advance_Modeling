@@ -149,11 +149,6 @@ for(fold in b1_folds) {
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-
-
-model <- brm(succ_bases_advanced ~ og_basepath_dist, 
-             family = cumulative(link = "logit"), data = baserunner_1st_final)
-
 ####################################################################################################################################################################
 
 
