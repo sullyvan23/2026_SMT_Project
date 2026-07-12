@@ -103,7 +103,7 @@ one_on_data_sum <- one_on_data_sum %>% left_join(one_on_run_exps, by = c("player
 one_on_data_sum <- one_on_data_sum %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>% 
                                        mutate(across(c(d_sit_re:a3_sit_re), ~ weighted.mean(., prob))) %>%
                                        slice(1) %>% ungroup()
-
+one_on_data_sum <- one_on_data_sum %>% select(-c(proj_batter_base, prob))
 
 
 
