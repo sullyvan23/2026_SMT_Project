@@ -145,7 +145,7 @@ for(fold in b1_folds) {
   print("-")
   train <- baserunner_1st_final[-fold, ]
   test <- baserunner_1st_final[fold, ]
-  model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + OF_ground_next3_angle,
+  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + OF_ground_next3_angle,
                family = ocat(R = 4), data = train)
   act <- c(act, test$succ_bases_advanced) 
   pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
@@ -156,7 +156,7 @@ for(i in 1:length(act)) {
 }
 act <- act/act
 logLoss(act, pred)
-### 0.7600131
+### 0.7864373
 
 
 act <- c()
@@ -166,7 +166,7 @@ for(fold in b2_folds) {
   print("-")
   train <- baserunner_2nd_final[-fold, ]
   test <- baserunner_2nd_final[fold, ]
-  model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + s(OF_ground_next2_angle, k = 3),
+  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + s(OF_ground_next2_angle, k = 3),
                family = ocat(R = 3), data = train)
   act <- c(act, test$succ_bases_advanced) 
   pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
@@ -177,7 +177,7 @@ for(i in 1:length(act)) {
 }
 act <- act/act
 logLoss(act, pred)
-### 0.3770111
+### 0.3597488
 
 summary(model)
 plot(model, pages = 1)
@@ -185,11 +185,11 @@ plot(model, pages = 1)
 
 
 
-advance_first_model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + 
+advance_first_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + 
                                                  OF_ground_next3_angle + speed_95_runner,
                            family = ocat(R = 4), data = baserunner_1st_final)
 
-advance_second_model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + 
+advance_second_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + 
                                                  s(OF_ground_next2_angle, k = 3) + speed_95_runner + speed_95_throw,
                            family = ocat(R = 3), data = baserunner_2nd_final)
 
