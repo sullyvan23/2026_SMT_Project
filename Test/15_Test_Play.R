@@ -54,8 +54,9 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_p
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
                                   tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
                                   advance_one_prob = predict(a1_model, newdata = test_play, type = "response"),
-                                  advance_two_prob = predict(a2_model, newdata = test_play, type = "response"))
-test_play <- test_play %>% mutate(advance_three_prob = predict(a3_model, newdata = test_play, type = "response"))
+                                  advance_two_prob = predict(a2_model, newdata = test_play, type = "response"),
+                                  advance_three_prob = predict(a3_model, newdata = test_play, type = "response"))
+test_play <- test_play %>% mutate(advance_three_prob = ifelse(advance_three_prob >= advance_two_prob, advance_two_prob - 0.01, advance_three_prob))
 test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                   tag = tag_up_prob * caught_prob,
@@ -157,8 +158,9 @@ for(i in 5:nrow(test_play)) {
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
                                                 tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"),
                                                 advance_one_prob = predict(a1_model, newdata = next_time_check, type = "response"),
-                                                advance_two_prob = predict(a2_model, newdata = next_time_check, type = "response"))
-  next_time_check <- next_time_check %>% mutate(advance_three_prob = predict(a3_model, newdata = next_time_check, type = "response"))
+                                                advance_two_prob = predict(a2_model, newdata = next_time_check, type = "response"),
+                                                advance_three_prob = predict(a3_model, newdata = next_time_check, type = "response"))
+  next_time_check <- next_time_check %>% mutate(advance_three_prob = ifelse(advance_three_prob >= advance_two_prob, advance_two_prob - 0.01, advance_three_prob))
   next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
