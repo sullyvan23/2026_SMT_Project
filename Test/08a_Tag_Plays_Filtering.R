@@ -102,7 +102,13 @@ tag_up_data_sum_3 <- tag_up_data_sum_3 %>% mutate(get_back = ifelse(time_back < 
 ##############################################################################################################################################################################
 
 tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+tag_end <- tag_end %>% rename(back_basepath = og_basepath_dist,
+                              back_velo = runner_basepath_velo)
+tag_end <- tag_end %>% mutate(back_basepath = ifelse(back_basepath <= 0.14  &  back_velo > 0, 0.025, back_basepath),
+                              back_velo = ifelse(back_basepath <= 0.14  &  back_velo > 0, 0, back_velo))
 
+ggplot(tag_end, aes(x = back_basepath, y = back_velo, color = succ_tag)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
 set.seed(637)
 tag_end_folds <- createFolds(tag_end$succ_tag, k = 10)
@@ -114,20 +120,20 @@ for(fold in tag_end_folds) {
   print("-")
   train <- tag_end[-fold, ]
   test <- tag_end[fold, ]
-  model <- gam(succ_tag ~ te(og_basepath_dist, ground_next_dist, k = 3) + runner_basepath_velo + caught_prob + speed_95_throw, 
+  model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + caught_prob + speed_95_throw, 
                family = binomial, data = train)
   act <- c(act, test$succ_tag) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1527536
+### 0.151219
 
 plot(model, page = 1)
 summary(model)
 
 
 
-tag_end_model <- gam(succ_tag ~ te(og_basepath_dist, ground_next_dist, k = 3) + runner_basepath_velo + caught_prob + speed_95_throw + speed_95_runner, 
+tag_end_model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + caught_prob + speed_95_throw + speed_95_runner, 
                      family = binomial, data = tag_end)
 summary(tag_end_model)
 plot(tag_end_model, pages = 1)
