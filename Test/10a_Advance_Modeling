@@ -124,10 +124,12 @@ advance_data_sum <- advance_data %>% group_by(game_string, play_per_game, player
                                                      speed_95_throw, next_base_x:OF_next3_velo_angle),
                                             ~ weighted.mean(., if_caught_catch_prob)))
 advance_data_sum <- advance_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
+advance_data_sum$succ_bases_advanced <- as.numeric(advance_data_sum$succ_bases_advanced)+1
 
-
-baserunner_1st_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 11) %>% slice(n())
-baserunner_2nd_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 12) %>% slice(n())
+baserunner_1st_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 11) %>% slice(n()) %>%
+                                             filter(runner_basepath_velo < 0.35)
+baserunner_2nd_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 12) %>% slice(n()) %>%
+                                             filter(runner_basepath_velo < 0.36)
 baserunner_3rd_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 13) %>% slice(n())
 
 set.seed(288)
@@ -136,19 +138,67 @@ b2_folds <- createFolds(baserunner_2nd_final$succ_bases_advanced, k = 10)
 b3_folds <- createFolds(baserunner_3rd_final$succ_bases_advanced, k = 10)
 
 
-
 act <- c()
+pred_hold <- matrix(ncol = 4)
 pred <- c()
 for(fold in b1_folds) {
   print("-")
   train <- baserunner_1st_final[-fold, ]
   test <- baserunner_1st_final[fold, ]
-  model <- gam(succ_bases_advanced ~ og_basepath_dist, 
+  model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + OF_ground_next3_angle,
                family = ocat(R = 4), data = train)
   act <- c(act, test$succ_bases_advanced) 
-  pred <- c(pred, predict(model, newdata = test, type = "response"))
+  pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
 }
+pred_hold <- pred_hold[-1,]
+for(i in 1:length(act)) {
+    pred <- c(pred, pred_hold[i,act[i]])
+}
+act <- act/act
 logLoss(act, pred)
+### 0.7600131
+
+
+act <- c()
+pred_hold <- matrix(ncol = 3)
+pred <- c()
+for(fold in b2_folds) {
+  print("-")
+  train <- baserunner_2nd_final[-fold, ]
+  test <- baserunner_2nd_final[fold, ]
+  model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + s(OF_ground_next2_angle, k = 3),
+               family = ocat(R = 3), data = train)
+  act <- c(act, test$succ_bases_advanced) 
+  pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
+}
+pred_hold <- pred_hold[-1,]
+for(i in 1:length(act)) {
+    pred <- c(pred, pred_hold[i,act[i]])
+}
+act <- act/act
+logLoss(act, pred)
+### 0.3770111
+
+summary(model)
+plot(model, pages = 1)
+
+
+
+
+advance_first_model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + 
+                                                 OF_ground_next3_angle + speed_95_runner,
+                           family = ocat(R = 4), data = baserunner_1st_final)
+
+advance_second_model <- gam(succ_bases_advanced ~ te(og_basepath_dist, runner_basepath_velo, k = 3) + te(ground_x, ground_y, k = 5) + 
+                                                 s(OF_ground_next2_angle, k = 3) + speed_95_runner + speed_95_throw,
+                           family = ocat(R = 3), data = baserunner_2nd_final)
+
+advance_third_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo, 
+                           family = binomial, data = advance_one_final)
+
+summary(advance_second_model)
+plot(advance_first_model, pages = 1)
+
 ####################################################################################################################################################################
 
 
