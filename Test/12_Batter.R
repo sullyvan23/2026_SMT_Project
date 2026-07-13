@@ -55,8 +55,9 @@ pred_hold <- pred_hold[-1,]
 for(i in 1:length(act)) {
     pred <- c(pred, pred_hold[i,act[i]])
 }
+act <- act/act
 logLoss(act, pred)
-### 0.600435
+### 0.5727799
 
 
 batter_bases_model <- gam(final_base ~ te(ground_x, ground_y, k = 6) + time_to_ground, family = ocat(R = 3), data = batter_advance)
