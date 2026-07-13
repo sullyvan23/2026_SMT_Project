@@ -37,6 +37,24 @@ ggplot(ellipse, aes(x = runner_basepath_velo, y = runner_basepath_accel, color =
 
 ##################################################################################################################################################################
 
+add_advance_probs <- function(input_dataset) {
+  if(test_play$player_id_br[1] == 11) {
+    advance_probs <- data.frame(predict(advance_first_model, newdata = input_dataset, type = "response"))[,-1]
+  } else if(test_play$player_id_br[1] == 12) {
+    advance_probs <- data.frame(predict(advance_second_model, newdata = input_dataset, type = "response"))[,-1]
+    advance_probs[,3] <- NA
+  } else if(test_play$player_id_br[1] == 13) {
+    advance_probs <- data.frame(predict(advance_third_model, newdata = input_dataset, type = "response"))
+    advance_probs[,2:3] <- NA
+  }
+  advance_probs <- advance_probs %>% rename(advance_1_prob = 1, advance_2_prob = 2, advance_3_prob = 3)
+  input_dataset <- cbind(input_dataset, advance_probs)
+
+  return(input_dataset)
+}
+
+##################################################################################################################################################################
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
@@ -46,32 +64,40 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d166_FNQ_PHD", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_per_game == 230) ### not caught easily
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d168_BTL_ARN", play_per_game == 123) ### not caught easily
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d178_AVV_ARN", play_per_game == 137) ### infield fly
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 95) ### 1st, rlly high catch prob
 
 
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, dropped
-test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
-                                  tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"),
-                                  advance_one_prob = predict(a1_model, newdata = test_play, type = "response"),
-                                  advance_two_prob = predict(a2_model, newdata = test_play, type = "response"),
-                                  advance_three_prob = predict(a3_model, newdata = test_play, type = "response"))
-test_play <- test_play %>% mutate(advance_three_prob = ifelse(advance_three_prob >= advance_two_prob, advance_two_prob - 0.01, advance_three_prob))
-test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
-                                  stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
-                                  tag = tag_up_prob * caught_prob,
-                                  advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
-                                  advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
-                                  advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
-                                  advance_3 = advance_three_prob * (1 - caught_prob))
-max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
-max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/140)
-test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
+
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
+test_play <- test_play %>% mutate(back_basepath = NA,
+                                  back_velo = NA,
                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                             (runner_basepath_accel^2 / max_accel^2) +
                                             ifelse(og_basepath_dist <= 0.5  &  runner_basepath_velo <= 0,
                                                    (og_basepath_dist-0.525)^2 / 0.5^2,
                                                     0))
+for(j in 1:(nrow(test_play)-1)) {
+  back_results <- go_back_function(test_play[j:nrow(test_play),])
+  test_play$back_basepath[j] <- back_results[[1]]
+  test_play$back_velo[j] <- back_results[[2]]
+  print(j/nrow(test_play))
+}
+test_play$back_basepath[nrow(test_play)] <- test_play$og_basepath_dist[nrow(test_play)]
+test_play$back_velo[nrow(test_play)] <- test_play$runner_basepath_velo[nrow(test_play)]
+test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
+                                  tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"))
+test_play <- add_advance_probs(test_play)
+test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
+                                  stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
+                                  tag = tag_up_prob * caught_prob,
+                                  advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                  advance_1 = advance_1_prob * (1 - caught_prob),
+                                  advance_2 = advance_2_prob * (1 - caught_prob),
+                                  advance_3 = advance_3_prob * (1 - caught_prob))
+max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
+max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/140)
+test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE))
 ##################################################################################################################################################################
 test_play <- test_play %>% mutate(optimal_basepath = NA)
 possible_basepath <- seq(test_play$player_id_br[1]-10, 4, by = 0.01)
@@ -98,23 +124,23 @@ for(i in 1:nrow(test_play)) {
 }
 
 ##################################################################################################################################################################
-model_play <- test_play[1:4,] %>% mutate(runner_basepath_velo = round(runner_basepath_velo, 3))
+model_play <- test_play[1,] %>% mutate(runner_basepath_velo = round(runner_basepath_velo, 3))
 fps <- model_play$fps[1]
 
-for(i in 5:nrow(test_play)) {
+for(i in 2:nrow(test_play)) {
   accels <- seq(round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                       model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
                                                          -(model_play$runner_basepath_velo[i-1]/10) + ((-0.5+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) -
-                      (0.004 * (fps/0.05)), 
+                      (0.005 * (fps/0.05)), 
                       3),
                 round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                       model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.5  &  model_play$runner_basepath_velo[i-1] <= 0,
                                                          -(model_play$runner_basepath_velo[i-1]/10) + ((-0.5+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) +
-                      (0.004 * (fps/0.05)), 
+                      (0.005 * (fps/0.05)), 
                       3),
                 by = 0.001)
   
@@ -156,18 +182,15 @@ for(i in 5:nrow(test_play)) {
   }
   
   next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
-                                                tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"),
-                                                advance_one_prob = predict(a1_model, newdata = next_time_check, type = "response"),
-                                                advance_two_prob = predict(a2_model, newdata = next_time_check, type = "response"),
-                                                advance_three_prob = predict(a3_model, newdata = next_time_check, type = "response"))
-  next_time_check <- next_time_check %>% mutate(advance_three_prob = ifelse(advance_three_prob >= advance_two_prob, advance_two_prob - 0.01, advance_three_prob))
+                                                tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"))
+  next_time_check <- add_advance_probs(next_time_check %>% select(-c(advance_1_prob:advance_3_prob)))
   next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
-                                                advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
-                                                advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
-                                                advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
-                                                advance_3 = advance_three_prob * (1 - caught_prob))
+                                                advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                                advance_1 = advance_1_prob * (1 - caught_prob),
+                                                advance_2 = advance_2_prob * (1 - caught_prob),
+                                                advance_3 = advance_3_prob * (1 - caught_prob))
   
   next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
                                                 jerk_now = row_number() / nrow(next_time_check)) %>%
@@ -181,6 +204,11 @@ for(i in 5:nrow(test_play)) {
 plot(-test_play$time_left_ground, test_play$basepath, col = "black", ylim = c(min(test_play$basepath,model_play$basepath), max(test_play$basepath,model_play$basepath)))
 points(-model_play$time_left_ground, model_play$basepath, col = "red")
 
+plot(-test_play$time_left_ground, test_play$run_exp, col = "black", ylim = c(min(test_play$run_exp,model_play$run_exp), max(test_play$run_exp,model_play$run_exp)))
+points(-model_play$time_left_ground, model_play$run_exp, col = "red")
+
+
+
 ellipse <- expand.grid(runner_basepath_velo = seq(-max_speed, max_speed, by = 0.01),
                        runner_basepath_accel = seq(-max_accel, max_accel, by = 0.01)) %>%
            mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
@@ -190,8 +218,7 @@ plot(ellipse$runner_basepath_velo, ellipse$runner_basepath_accel, col = "black")
 points(test_play$runner_basepath_velo, test_play$runner_basepath_accel, col = "blue")
 points(model_play$runner_basepath_velo, model_play$runner_basepath_accel, col = "red")
 
-plot(-test_play$time_left_ground, test_play$run_exp, col = "black", ylim = c(min(test_play$run_exp,model_play$run_exp), max(test_play$run_exp,model_play$run_exp)))
-points(-model_play$time_left_ground, model_play$run_exp, col = "red")
+
 
 
 plot(test_play$runner_basepath_velo, test_play$runner_basepath_accel, col = "black")
@@ -238,7 +265,7 @@ go_back_function <- function(input_data) {
                                                                                      -(input_data$runner_basepath_velo[i-1]/10) + ((-0.5+input_data$og_basepath_dist[i-1]) * 
                                                                                                                                     input_data$runner_basepath_accel[i-1]/10),
                                                                                      -(input_data$runner_basepath_velo[i-1]/80)) -
-                                                  (0.003 * (fps/0.05)), 
+                                                  (0.004 * (fps/0.05)), 
                                                   3)
   
     input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i-1] + (input_data$runner_basepath_accel[i]*fps)
