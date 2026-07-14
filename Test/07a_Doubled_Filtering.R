@@ -33,6 +33,7 @@ final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runne
 summary(final_doubled_model)
 plot(final_doubled_model, page = 1)
 
+doubled_up_final <- doubled_up_final %>% ungroup() %>% mutate(final_doubled_prob = 1 - predict(final_doubled_model, type = "response"))
 
 ####################################################################################################################################################################
 
