@@ -64,7 +64,7 @@ all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...83",
 ### OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle, 
 ### speed_95_runner, speed_95_throw, caught_prob
 
-all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, timestamp, player_id_br,
+all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, timestamp, player_id_br, player_code_runner,
                                                     time_to_ground, time_left_ground, ground_x, ground_y, 
                                                     basepath, og_basepath_dist, runner_basepath_velo, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
                                                     OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
@@ -97,13 +97,25 @@ one_on_data_sum <- one_on_data_sum %>% pivot_longer(cols = batter_1:batter_3,
                                                     values_to = "prob")
 
 ### dataset with run expectancies of situations
-one_on_run_exps <- read_csv("one_on_run_exps.csv")
+### one_on_run_exps <- read_csv("one_on_run_exps.csv")
 one_on_data_sum <- one_on_data_sum %>% left_join(one_on_run_exps, by = c("player_id_br", "proj_batter_base"))
 
 one_on_data_sum <- one_on_data_sum %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>% 
                                        mutate(across(c(d_sit_re:a3_sit_re), ~ weighted.mean(., prob))) %>%
                                        slice(1) %>% ungroup()
 one_on_data_sum <- one_on_data_sum %>% select(-c(proj_batter_base, prob))
+
+##################################################################################################################################################################################
+
+plays_share <- one_on_data_sum %>% left_join(game_info, by = "game_string")
+plays_share <- plays_share %>% relocate(year:home_team, .after = player_code_runner) %>%
+                               filter(!is.na(player_code_runner))
+
+write.csv(plays_share, "one_on_data_sum.csv", row.names = FALSE)
+
+
+
+
 
 
 
