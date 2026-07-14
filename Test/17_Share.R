@@ -77,6 +77,7 @@ add_advance_probs <- function(input_dataset) {
 
 ### some plays I've looked at to potentially choose from
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
@@ -87,10 +88,11 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d168_BTL_ARN", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d178_AVV_ARN", play_per_game == 137) ### infield fly
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 95) ### 1st, rlly high catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, dropped
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d089_PHD_VAS", play_per_game == 209) ### 2nd, succ tag, low catch prob
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
 ### ellipse for keeping motion within normal parameters
 test_play <- test_play %>% mutate(back_basepath = NA,
                                   back_velo = NA,
@@ -212,6 +214,7 @@ for(i in 5:nrow(test_play)) {
   model_play <- bind_rows(model_play, next_time_check[1,])
   print(i/nrow(test_play))
 }
+
 ##################################################################################################################################################################
 
 ### plot of position over time (actual = black, model = red)
