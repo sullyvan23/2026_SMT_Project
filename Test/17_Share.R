@@ -15,11 +15,11 @@ go_back_function <- function(input_data) {
   for(i in 2:nrow(input_data)) {
     ### close to minimum possible next acceleration
     input_data$runner_basepath_accel[i] <- round(input_data$runner_basepath_accel[i-1] + ((1-input_data$ellipse[i-1]^1) * (input_data$runner_basepath_accel[i-1] - input_data$runner_basepath_accel_2[i-1])) +
-                                                  input_data$ellipse[i-1]^1 * ifelse(input_data$og_basepath_dist[i-1] <= 0.3  &  input_data$runner_basepath_velo[i-1] <= 0,
-                                                                                     -(input_data$runner_basepath_velo[i-1]/10) + ((-0.3+input_data$og_basepath_dist[i-1]) * 
+                                                  input_data$ellipse[i-1]^1 * ifelse(input_data$og_basepath_dist[i-1] <= 0.2  &  input_data$runner_basepath_velo[i-1] <= 0,
+                                                                                     -(input_data$runner_basepath_velo[i-1]/10) + ((-0.2+input_data$og_basepath_dist[i-1]) * 
                                                                                                                                     input_data$runner_basepath_accel[i-1]/10),
                                                                                      -(input_data$runner_basepath_velo[i-1]/80)) -
-                                                  (0.0025 * (fps/0.05)), 
+                                                  (0.0045 * (fps/0.05)), 
                                                   3)
 
     ### having velocity and position match acceleration
@@ -29,8 +29,8 @@ go_back_function <- function(input_data) {
     input_data$runner_basepath_accel_2[i] = input_data$runner_basepath_accel[i-1]
     input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
                               (input_data$runner_basepath_accel[i]^2 / max_accel^2) +
-                              ifelse(input_data$og_basepath_dist[i] <= 0.3  &  input_data$runner_basepath_velo[i] <= 0,
-                                     (input_data$og_basepath_dist[i]-0.325)^2 / 0.3^2,
+                              ifelse(input_data$og_basepath_dist[i] <= 0.2  &  input_data$runner_basepath_velo[i] <= 0,
+                                     (input_data$og_basepath_dist[i]-0.225)^2 / 0.2^2,
                                       0)
 
     ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
@@ -42,8 +42,8 @@ go_back_function <- function(input_data) {
       
       input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
                                 (input_data$runner_basepath_accel[i]^2 / max_accel^2) +
-                                ifelse(input_data$og_basepath_dist[i] <= 0.3  &  input_data$runner_basepath_velo[i] <= 0,
-                                       (input_data$og_basepath_dist[i]-0.325)^2 / 0.3^2,
+                                ifelse(input_data$og_basepath_dist[i] <= 0.2  &  input_data$runner_basepath_velo[i] <= 0,
+                                       (input_data$og_basepath_dist[i]-0.225)^2 / 0.2^2,
                                         0)
     }
     
@@ -78,7 +78,6 @@ add_advance_probs <- function(input_dataset) {
 ### some plays I've looked at to potentially choose from
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
@@ -89,17 +88,20 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d178_AVV_ARN", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 95) ### 1st, rlly high catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, dropped
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_per_game == 79)  ### third tag, prob goes a bit too far
+
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 ### ellipse for keeping motion within normal parameters
 test_play <- test_play %>% mutate(back_basepath = NA,
                                   back_velo = NA,
                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                             (runner_basepath_accel^2 / max_accel^2) +
-                                            ifelse(og_basepath_dist <= 0.3  &  runner_basepath_velo <= 0,
-                                                   (og_basepath_dist-0.325)^2 / 0.3^2,
+                                            ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
+                                                   (og_basepath_dist-0.225)^2 / 0.2^2,
                                                     0))
 ### calculating roughly closest runner can get to original base by time ball is caught if they decide to go bacl
 for(j in 1:(nrow(test_play)-1)) {
@@ -125,7 +127,7 @@ test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
 
 ### calculating max potential speeds and accelerations, and run expectancy every timestamp
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
-max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/140)
+max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/110)
 test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE))
 
 #####################################################################################################################################################################################
@@ -137,18 +139,18 @@ fps <- model_play$fps[1]
 for(i in 5:nrow(test_play)) {
   ### giving range of next possible acclerations
   accels <- seq(round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.3  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                         -(model_play$runner_basepath_velo[i-1]/10) + ((-0.3+model_play$og_basepath_dist[i-1]) * 
+                      model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
+                                                         -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) -
-                      (0.003 * (fps/0.05)), 
+                      (0.005 * (fps/0.05)), 
                       4),
                 round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
-                      model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.3  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                         -(model_play$runner_basepath_velo[i-1]/10) + ((-0.3+model_play$og_basepath_dist[i-1]) * 
+                      model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
+                                                         -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) +
-                      (0.003 * (fps/0.05)), 
+                      (0.005 * (fps/0.05)), 
                       4),
                 by = 0.0005)
 
@@ -162,8 +164,8 @@ for(i in 5:nrow(test_play)) {
                                                 runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                 ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                           (runner_basepath_accel^2 / max_accel^2) +
-                                                          ifelse(og_basepath_dist <= 0.3  &  runner_basepath_velo <= 0,
-                                                                 (og_basepath_dist-0.325)^2 / 0.3^2,
+                                                          ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
+                                                                 (og_basepath_dist-0.225)^2 / 0.2^2,
                                                                   0))
 
   ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
@@ -176,7 +178,7 @@ for(i in 5:nrow(test_play)) {
     
     next_time_check <- next_time_check %>% mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                             (runner_basepath_accel^2 / max_accel^2) +
-                                                            ((og_basepath_dist-0.325)^2 / 0.3^2))
+                                                            ((og_basepath_dist-0.225)^2 / 0.2^2))
   }
 
   ### filtering for only possible motion
@@ -185,12 +187,17 @@ for(i in 5:nrow(test_play)) {
                                                 back_velo = NA)
 
   ### getting final possible positions if they decide to go back (for calcuating tag probability)
-  for(j in 1:nrow(next_time_check)) {
-    go_back_check <- bind_rows(next_time_check[j,],
-                               test_play[i:nrow(test_play),]) %>% select(og_basepath_dist, runner_basepath_velo, runner_basepath_accel, runner_basepath_accel_2, ellipse)
-    back_results <- go_back_function(go_back_check)
-    next_time_check$back_basepath[j] <- back_results[[1]]
-    next_time_check$back_velo[j] <- back_results[[2]]
+  if(i == nrow(test_play)) {
+    next_time_check$back_basepath <- next_time_check$og_basepath_dist
+    next_time_check$back_velo <- next_time_check$runner_basepath_velo
+  } else {
+    for(j in 1:nrow(next_time_check)) {
+      go_back_check <- bind_rows(next_time_check[j,],
+                                 test_play[(i+1):nrow(test_play),]) %>% select(og_basepath_dist, runner_basepath_velo, runner_basepath_accel, runner_basepath_accel_2, ellipse)
+      back_results <- go_back_function(go_back_check)
+      next_time_check$back_basepath[j] <- back_results[[1]]
+      next_time_check$back_velo[j] <- back_results[[2]]
+    }
   }
 
   ### calculating needed probabilities
