@@ -1,29 +1,4 @@
 
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d155_VAS_PHD", play_per_game == 266)
-
-next_time_check <- test_play[2,] %>% slice(rep(1,21))
-next_time_check <- next_time_check %>% mutate(runner_basepath_velo = test_play$runner_basepath_velo[1] + ((row_number() - 11) * ((0.1 * fps)/10)),
-                                              og_basepath_dist = test_play$og_basepath_dist[1] + (runner_basepath_velo * fps),
-                                              basepath = og_basepath_dist - player_id_br + 12)
-
-next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
-                                              tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"),
-                                              advance_one_prob = predict(advance_one_model, newdata = next_time_check, type = "response"),
-                                              advance_two_prob = predict(advance_two_model, newdata = next_time_check, type = "response"))
-next_time_check <- next_time_check %>% mutate(advance_three_prob = predict(advance_three_model, newdata = next_time_check, type = "response"))
-next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
-                                              stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
-                                              tag = tag_up_prob * caught_prob,
-                                              advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
-                                              advance_1 = (advance_one_prob - advance_two_prob) * (1 - caught_prob),
-                                              advance_2 = (advance_two_prob - advance_three_prob) * (1 - caught_prob),
-                                              advance_3 = advance_three_prob * (1 - caught_prob))
-
-next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re))) %>%
-                                      arrange(desc(run_exp))
-
-##################################################################################################################################################################\
-
 ellipse <- expand.grid(runner_basepath_velo = seq(-0.3, 0.3, by = 0.01),
                        runner_basepath_accel = seq(-0.3, 0.3, by = 0.01)) %>%
            mutate(ellipse = (runner_basepath_velo^2 / 0.3^2) +
@@ -91,7 +66,7 @@ test_play <- add_advance_probs(test_play)
 test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                   tag = tag_up_prob * caught_prob,
-                                  advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                  advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
                                   advance_1 = advance_1_prob * (1 - caught_prob),
                                   advance_2 = advance_2_prob * (1 - caught_prob),
                                   advance_3 = advance_3_prob * (1 - caught_prob))
@@ -114,7 +89,7 @@ for(i in 1:nrow(test_play)) {
   best_basepath <- best_basepath %>% mutate(doubled = doubled_up_prob * caught_prob,
                                             stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                             tag = tag_up_prob * caught_prob,
-                                            advance_0 = (1 - advance_one_prob) * (1 - caught_prob),
+                                            advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
                                             advance_1 = (advance_one_prob - ifelse(player_id_br == 13, 0, advance_two_prob)) * (1 - caught_prob),
                                             advance_2 = (advance_two_prob - ifelse(player_id_br >= 12, 0, advance_three_prob)) * (1 - caught_prob),
                                             advance_3 = advance_three_prob * (1 - caught_prob))
@@ -187,7 +162,7 @@ for(i in 5:nrow(test_play)) {
   next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
-                                                advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                                advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
                                                 advance_1 = advance_1_prob * (1 - caught_prob),
                                                 advance_2 = advance_2_prob * (1 - caught_prob),
                                                 advance_3 = advance_3_prob * (1 - caught_prob))
