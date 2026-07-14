@@ -7,7 +7,7 @@ next_time_check <- next_time_check %>% mutate(runner_basepath_velo = test_play$r
                                               basepath = og_basepath_dist - player_id_br + 12)
 
 next_time_check <- next_time_check %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = next_time_check, type = "response"),
-                                              tag_up_prob = predict(tag_up_model, newdata = next_time_check, type = "response"),
+                                              tag_up_prob = predict(tag_end_model, newdata = next_time_check, type = "response"),
                                               advance_one_prob = predict(advance_one_model, newdata = next_time_check, type = "response"),
                                               advance_two_prob = predict(advance_two_model, newdata = next_time_check, type = "response"))
 next_time_check <- next_time_check %>% mutate(advance_three_prob = predict(advance_three_model, newdata = next_time_check, type = "response"))
@@ -86,7 +86,7 @@ for(j in 1:(nrow(test_play)-1)) {
 test_play$back_basepath[nrow(test_play)] <- test_play$og_basepath_dist[nrow(test_play)]
 test_play$back_velo[nrow(test_play)] <- test_play$runner_basepath_velo[nrow(test_play)]
 test_play <- test_play %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = test_play, type = "response"),
-                                  tag_up_prob = predict(tag_up_model, newdata = test_play, type = "response"))
+                                  tag_up_prob = predict(tag_end_model, newdata = test_play, type = "response"))
 test_play <- add_advance_probs(test_play)
 test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
@@ -107,7 +107,7 @@ for(i in 1:nrow(test_play)) {
   best_basepath <- best_basepath %>% mutate(og_basepath_dist = basepath - (player_id_br-10),
                                             runner_basepath_velo = 0)
   best_basepath <- best_basepath %>% mutate(doubled_up_prob = 1 - predict(final_doubled_model, newdata = best_basepath, type = "response"),
-                                            tag_up_prob = predict(tag_up_model, newdata = best_basepath, type = "response"),
+                                            tag_up_prob = predict(tag_end_model, newdata = best_basepath, type = "response"),
                                             advance_one_prob = predict(a1_model, newdata = best_basepath, type = "response"),
                                             advance_two_prob = predict(a2_model, newdata = best_basepath, type = "response"))
   best_basepath <- best_basepath %>% mutate(advance_three_prob = predict(a3_model, newdata = best_basepath, type = "response"))
