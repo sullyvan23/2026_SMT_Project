@@ -115,7 +115,7 @@ test_play <- add_advance_probs(test_play)
 test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                   tag = tag_up_prob * caught_prob,
-                                  advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                  advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
                                   advance_1 = advance_1_prob * (1 - caught_prob),
                                   advance_2 = advance_2_prob * (1 - caught_prob),
                                   advance_3 = advance_3_prob * (1 - caught_prob))
@@ -197,7 +197,7 @@ for(i in 5:nrow(test_play)) {
   next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
-                                                advance_0 = (1 - advance_1_prob) * (1 - caught_prob),
+                                                advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
                                                 advance_1 = advance_1_prob * (1 - caught_prob),
                                                 advance_2 = advance_2_prob * (1 - caught_prob),
                                                 advance_3 = advance_3_prob * (1 - caught_prob))
