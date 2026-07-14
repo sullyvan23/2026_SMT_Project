@@ -76,7 +76,7 @@ add_advance_probs <- function(input_dataset) {
 #####################################################################################################################################################################################
 
 ### some plays I've looked at to potentially choose from
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
@@ -90,7 +90,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_p
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d089_PHD_VAS", play_per_game == 209) ### 2nd, succ tag, low catch prob
 ### ellipse for keeping motion within normal parameters
 test_play <- test_play %>% mutate(back_basepath = NA,
                                   back_velo = NA,
@@ -116,7 +116,7 @@ test_play <- add_advance_probs(test_play)
 test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                   tag = tag_up_prob * caught_prob,
-                                  advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
+                                  advance_0 = (1 - rowSums(across(c(advance_1_prob:advance_3_prob)), na.rm = TRUE)) * (1 - caught_prob),
                                   advance_1 = advance_1_prob * (1 - caught_prob),
                                   advance_2 = advance_2_prob * (1 - caught_prob),
                                   advance_3 = advance_3_prob * (1 - caught_prob))
@@ -198,7 +198,7 @@ for(i in 5:nrow(test_play)) {
   next_time_check <- next_time_check %>% mutate(doubled = doubled_up_prob * caught_prob,
                                                 stay = (1 - doubled_up_prob - tag_up_prob) * caught_prob,
                                                 tag = tag_up_prob * caught_prob,
-                                                advance_0 = (1 - (advance_1_prob+advance_2_prob+advance_3_prob)) * (1 - caught_prob),
+                                                advance_0 = (1 - rowSums(across(c(advance_1_prob:advance_3_prob)), na.rm = TRUE)) * (1 - caught_prob),
                                                 advance_1 = advance_1_prob * (1 - caught_prob),
                                                 advance_2 = advance_2_prob * (1 - caught_prob),
                                                 advance_3 = advance_3_prob * (1 - caught_prob))
