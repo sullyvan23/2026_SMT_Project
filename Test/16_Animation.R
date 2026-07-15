@@ -21,6 +21,7 @@ animate_model()
 
 
 ###########################################################################################################################################################################################
+if(!require("showtext")) {install.packages("showtext")}; library(showtext)
 library(showtext)
 font_add_google("Press Start 2P", "Press_Start_2P")
 
