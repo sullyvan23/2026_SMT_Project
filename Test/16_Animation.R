@@ -16,10 +16,15 @@ animate_positions <- animate_positions %>% group_by(timestamp) %>%
                                                                        "")) %>% 
                                             ungroup()
 
+
 animate_model()
 
 
 ###########################################################################################################################################################################################
+library(showtext)
+font_add_google("Press Start 2P", "Press_Start_2P")
+
+
 animate_model <- function() {
   
   # Set the specs for the gif we want to create (lower res to make it run quicker)
@@ -102,8 +107,9 @@ animate_model <- function() {
     ## Label on top of the people dots 
     geom_text(data = tracking_data %>% filter(type == "defense"),
               aes(x = position_x, y = position_y, label = player_id),
-              color = "black", size = 2,
-              show.legend = F) +
+              color = "black", size = 1.5,
+              show.legend = F,
+              family = "Press_Start_2P") +
     ## Plot the ball
     geom_point(data = tracking_data %>%
                  filter(type == "ball"),
@@ -116,7 +122,8 @@ animate_model <- function() {
     geom_text(data = tracking_data %>% filter(caught_prob != ""),
                aes(x = -150, y = 10,
                    label = paste0("Catch Prob: ", caught_prob)),
-               color = "white", size = 4, show.legend = F) +
+               color = "white", size = 3, show.legend = F,
+               family = "Press_Start_2P") +
     ## Specify colors for people
     scale_fill_manual(values = c("offense" = "#005AB5",
                                  "defense" = "#FEFE62",
@@ -128,7 +135,8 @@ animate_model <- function() {
     ## Annotate with the Play and Game ID
     annotate("text", x = c(150, 0), y = c(10, 430), color = "white",
              label = c(paste("Play:", animate_positions$play_per_game[1]), 
-                       paste("Game :", animate_positions$game_string[1])))
+                       paste("Game :", animate_positions$game_string[1])),
+             family = "Press_Start_2P")
   
   # Find the number of frames
   number_of_frames <-  max(tracking_data$frame_id)
