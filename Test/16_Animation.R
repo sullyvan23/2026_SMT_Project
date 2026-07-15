@@ -26,6 +26,8 @@ animate_model()
 
 
 ###########################################################################################################################################################################################
+### DON'T RE-ENTER
+### doing new tests with this animation function and if you use this version instead of the one in the Rdata it won't work
 
 animate_model <- function() {
   
