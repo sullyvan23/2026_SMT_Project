@@ -31,6 +31,13 @@ geom_point(data = wall_field,
 
 
 
+human_runner <- readPNG("human_runner.png")
+computer_runner <- readPNG("computer_runner.png")
+
+ggplot(test_play, aes(x = -time_left_ground, y = run_exp)) + 
+       geom_image(aes(image = "human_runner.png"), size = 0.1)
+
+
 
 
 
