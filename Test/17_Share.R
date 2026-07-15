@@ -95,6 +95,12 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_p
 
 ### play used
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+
+### needed variables
+max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
+max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/110)
+fps <- test_play$fps[1]
+
 ### ellipse for keeping motion within normal parameters
 test_play <- test_play %>% mutate(back_basepath = NA,
                                   back_velo = NA,
@@ -126,15 +132,12 @@ test_play <- test_play %>% mutate(doubled = doubled_up_prob * caught_prob,
                                   advance_3 = advance_3_prob * (1 - caught_prob))
 
 ### calculating max potential speeds and accelerations, and run expectancy every timestamp
-max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
-max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/110)
 test_play <- test_play %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE))
 
 #####################################################################################################################################################################################
 
 ### leaving first four rows as reaction that early is unrealistic
 model_play <- test_play[1:4,] %>% mutate(runner_basepath_velo = round(runner_basepath_velo, 3))
-fps <- model_play$fps[1]
 
 for(i in 5:nrow(test_play)) {
   ### giving range of next possible acclerations
