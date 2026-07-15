@@ -93,7 +93,7 @@ animate_model <- function() {
     mutate(frame_id = match(timestamp_adj, unique(timestamp_adj)))
   
   # Make Field and Plot Points
-  p <- geom_baseball(league = "MiLB") +
+  p <- field_background_plot() +
     ## Plot all people as dots
     geom_point(data = tracking_data %>% filter(type != "ball"),
                aes(x = position_x, y = position_y, fill = type),
@@ -116,7 +116,7 @@ animate_model <- function() {
     geom_text(data = tracking_data %>% filter(caught_prob != ""),
                aes(x = -150, y = 10,
                    label = paste0("Catch Prob: ", caught_prob)),
-               color = "white", size = 3, show.legend = F) +
+               color = "white", size = 4, show.legend = F) +
     ## Specify colors for people
     scale_fill_manual(values = c("offense" = "#005AB5",
                                  "defense" = "#FEFE62",
@@ -126,7 +126,7 @@ animate_model <- function() {
     ## Specify when to transition
     transition_time(frame_id) +
     ## Annotate with the Play and Game ID
-    annotate("text", x = c(150, 0), y = c(10, 400), color = "white",
+    annotate("text", x = c(150, 0), y = c(10, 430), color = "white",
              label = c(paste("Play:", animate_positions$play_per_game[1]), 
                        paste("Game :", animate_positions$game_string[1])))
   
