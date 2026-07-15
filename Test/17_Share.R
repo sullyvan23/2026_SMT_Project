@@ -76,8 +76,8 @@ add_advance_probs <- function(input_dataset) {
 #####################################################################################################################################################################################
 
 ### some plays I've looked at to potentially choose from
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
@@ -94,7 +94,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_p
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 ### ellipse for keeping motion within normal parameters
 test_play <- test_play %>% mutate(back_basepath = NA,
                                   back_velo = NA,
@@ -234,6 +234,9 @@ points(-model_play$time_left_ground, model_play$run_exp, col = "red")
 
 ### avg run expectancy model is better by over play
 mean(model_play$run_exp - test_play$run_exp)
+
+### percent runs of model
+sum(test_play$run_exp) / sum(model_play$run_exp)
 
 ##################################################################################################################################################################
 
