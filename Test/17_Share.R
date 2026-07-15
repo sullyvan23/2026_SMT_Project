@@ -243,7 +243,8 @@ sum(test_play$run_exp) / sum(model_play$run_exp)
 
 ##################################################################################################################################################################
 
-save(one_on_data_sum, advance_first_model, advance_second_model, advance_third_model, final_doubled_model, tag_end_model,
+save(one_on_data_sum, go_back_function, add_advance_probs, advance_first_model, advance_second_model, advance_third_model, final_doubled_model, tag_end_model,
+     basepath_x_model, basepath_y_model, animate_model,
      file = "share.Rdata")
 
 
