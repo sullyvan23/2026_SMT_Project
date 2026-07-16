@@ -76,7 +76,8 @@ animate_model <- function() {
     ## Convert player_id to numeric
     mutate(player_id = as.numeric(player_id)) %>%
     ## Calculate type and put position_z as NA
-    mutate(type = case_when((player_id %% 1) == 0.5 ~  "model",
+    mutate(type = case_when((player_id %% 1) == 0.5 ~  "computer_runner",
+                            (player_id+0.5) %in% animate_positions$player_id  ~  "human_runner",
                             player_id <= 9 ~ "defense",
                             between(player_id, 10, 13) ~ "offense",
                             between(player_id, 14, 17) ~ "umpire",
@@ -108,6 +109,16 @@ animate_model <- function() {
                aes(x = position_x, y = position_y, fill = type),
                shape = 21, size = 3,
                show.legend = F) +
+    ### plotting computer runner
+    geom_image(data = tracking_data %>% filter(type == "computer_runner"),
+               aes(x = position_x, y = position_y, image = "computer_runner.png"),
+               size = 0.05, alpha = 0.8,
+               show.legend = F) +
+    ### plotting human runner
+    geom_image(data = tracking_data %>% filter(type == "human_runner"),
+               aes(x = position_x, y = position_y, image = "human_runner.png"),
+               size = 0.05, alpha = 0.8,
+               show.legend = F) +
     ## Label on top of the people dots 
     geom_text(data = tracking_data %>% filter(type == "defense"),
               aes(x = position_x, y = position_y, label = player_id),
@@ -132,8 +143,7 @@ animate_model <- function() {
     scale_fill_manual(values = c("offense" = "#005AB5",
                                  "defense" = "#FEFE62",
                                  "coach" = "#1A85FF",
-                                 "umpire" = "black",
-                                 "model" = "#39FF14")) +
+                                 "umpire" = "black")) +
     ## Specify when to transition
     transition_time(frame_id) +
     ## Annotate with the Play and Game ID
