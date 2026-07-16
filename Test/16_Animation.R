@@ -30,6 +30,9 @@ animate_model()
 ### doing new tests with this animation function and if you use this version instead of the one in the Rdata it won't work
 
 animate_model <- function() {
+
+  ### random number for randomized fielder images
+  rand_num <- sample(0:2, 1)
   
   # Set the specs for the gif we want to create (lower res to make it run quicker)
   options(gganimate.dev_args = list(width = 3, height = 3, units = 'in', res = 120))
@@ -77,7 +80,7 @@ animate_model <- function() {
     mutate(player_id = as.numeric(player_id)) %>%
     ## Calculate type and put position_z as NA
     mutate(type = case_when((player_id %% 1) == 0.5 ~  "computer_runner",
-                            (player_id+0.5) %in% animate_positions$player_id  ~  "human_runner",
+                            (player_id+0.5) %in% animate_positions$player_id  ~  "actual_runner",
                             player_id <= 9 ~ "defense",
                             between(player_id, 10, 13) ~ "offense",
                             between(player_id, 14, 17) ~ "umpire",
@@ -104,27 +107,29 @@ animate_model <- function() {
   
   # Make Field and Plot Points
   p <- field_background_plot() +
-    ## Plot all people as dots
-    geom_point(data = tracking_data %>% filter(type != "ball"),
+    ## Plot other people as dots
+    geom_point(data = tracking_data %>% filter(player_id >= 14),
                aes(x = position_x, y = position_y, fill = type),
                shape = 21, size = 3,
                show.legend = F) +
+    ## plotting defenders
+    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 0),
+              aes(x = position_x, y = position_y, image = "fielder_1.png"),
+              size = 0.04) +
+    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 1),
+              aes(x = position_x, y = position_y, image = "fielder_2.png"),
+              size = 0.04) +
+    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 2),
+              aes(x = position_x, y = position_y, image = "fielder_3.png"),
+              size = 0.04) +
+    ### plotting actual runner
+    geom_image(data = tracking_data %>% filter(type == "actual_runner"),
+               aes(x = position_x, y = position_y, image = "actual_runner.png"),
+               size = 0.05, alpha = 0.8) +
     ### plotting computer runner
     geom_image(data = tracking_data %>% filter(type == "computer_runner"),
                aes(x = position_x, y = position_y, image = "computer_runner.png"),
-               size = 0.05, alpha = 0.8,
-               show.legend = F) +
-    ### plotting human runner
-    geom_image(data = tracking_data %>% filter(type == "human_runner"),
-               aes(x = position_x, y = position_y, image = "human_runner.png"),
-               size = 0.05, alpha = 0.8,
-               show.legend = F) +
-    ## Label on top of the people dots 
-    geom_text(data = tracking_data %>% filter(type == "defense"),
-              aes(x = position_x, y = position_y, label = player_id),
-              color = "black", size = 1.5,
-              show.legend = F,
-              family = "Press_Start_2P") +
+               size = 0.05, alpha = 0.8) +
     ## Plot the ball
     geom_point(data = tracking_data %>%
                  filter(type == "ball"),
