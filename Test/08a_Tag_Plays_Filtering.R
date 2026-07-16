@@ -133,7 +133,7 @@ summary(model)
 
 
 
-tag_end_model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + caught_prob + speed_95_throw + speed_95_runner, 
+tag_end_model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + speed_95_throw + speed_95_runner, 
                      family = binomial, data = tag_end)
 summary(tag_end_model)
 plot(tag_end_model, pages = 1)
