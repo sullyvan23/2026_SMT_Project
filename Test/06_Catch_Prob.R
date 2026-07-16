@@ -122,7 +122,7 @@ for(fold in catch_prob_folds) {
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
   model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                               te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3), 
+                               te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3) + time, 
                family = binomial, data = train)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
