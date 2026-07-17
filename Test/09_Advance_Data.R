@@ -3,8 +3,7 @@ advance_data <- ball_down_results %>% select(-force) %>% left_join(final_catch_p
 
 
 advance_data <- advance_data %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "timestamp", "player_id_br" = "player_id"))
-advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br) %>%
-                                 filter(sum(is.na(field_x)) != n())
+advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br) %>% filter(sum(is.na(field_x)) == 0)
 group <- 0
 advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br) %>%
                  group_modify(~{group <<- group + 1
@@ -134,7 +133,6 @@ advance_three_data_sum <- advance_three_data %>% mutate(across(c(player_id, pred
 advance_three_data_sum <- advance_three_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
 
-### remember to left_join advance previous base probability for next model
 
 write.csv(advance_one_data_sum, "advance_one_data_sum.csv", row.names = FALSE)
 write.csv(advance_two_data_sum, "advance_two_data_sum.csv", row.names = FALSE)
