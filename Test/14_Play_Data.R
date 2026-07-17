@@ -54,9 +54,9 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x_OF 
                                                                           OF_next3_dist,
                                                     OF_ground_next3_angle = acos(OF_ground_next3_dist / OF_ground_dist))
 all_plays_data_sum <- cbind(all_plays_data_sum, predict(batter_bases_model, newdata = all_plays_data_sum, type = "response"))
-all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...86",
-                                                    batter_2 = "...87",
-                                                    batter_3 = "...88")
+all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...82",
+                                                    batter_2 = "...83",
+                                                    batter_3 = "...84")
 
 ### NEED
 ### time_to_ground, time_left_ground, basepath, og_basepath_dist, runner_basepath_velo
