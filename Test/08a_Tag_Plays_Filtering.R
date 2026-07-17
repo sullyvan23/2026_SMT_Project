@@ -126,7 +126,7 @@ for(fold in tag_end_folds) {
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.151219
+### 0.1528475
 
 plot(model, page = 1)
 summary(model)
