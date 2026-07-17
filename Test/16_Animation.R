@@ -109,11 +109,6 @@ animate_model <- function() {
   
   # Make Field and Plot Points
   p <- field_background_plot() +
-    ## Plot other people as dots
-    geom_point(data = tracking_data %>% filter(player_id >= 14),
-               aes(x = position_x, y = position_y, fill = type),
-               shape = 21, size = 3,
-               show.legend = F) +
     ## plotting defenders
     geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 0),
               aes(x = position_x, y = position_y, image = "fielder_1.png"),
