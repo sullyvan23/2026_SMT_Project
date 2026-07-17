@@ -23,7 +23,7 @@ for(fold in a1_folds) {
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.04179012
+### 0.04271648
 
 a1_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo, 
                 family = binomial, data = advance_one_final)
