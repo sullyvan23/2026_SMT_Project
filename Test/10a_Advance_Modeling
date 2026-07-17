@@ -10,6 +10,8 @@ a1_folds <- createFolds(advance_one_final$advance_one, k = 10)
 a2_folds <- createFolds(advance_two_final$advance_two, k = 10)
 a3_folds <- createFolds(advance_three_final$advance_three, k = 10)
 
+check <- advance_one_final %>% filter(is.na(OF_ground_next_angle))
+
 
 act <- c()
 pred <- c()
