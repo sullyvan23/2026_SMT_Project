@@ -19,7 +19,7 @@ go_back_function <- function(input_data) {
                                                                                      -(input_data$runner_basepath_velo[i-1]/10) + ((-0.2+input_data$og_basepath_dist[i-1]) * 
                                                                                                                                     input_data$runner_basepath_accel[i-1]/10),
                                                                                      -(input_data$runner_basepath_velo[i-1]/80)) -
-                                                  (0.0045 * (fps/0.05)), 
+                                                  (0.0035 * (fps/0.05)), 
                                                   3)
 
     ### having velocity and position match acceleration
@@ -86,15 +86,16 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d168_BTL_ARN", play_per_game == 123) ### not caught easily
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d178_AVV_ARN", play_per_game == 137) ### infield fly
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 95) ### 1st, rlly high catch prob
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 312)  ### 1st, go kinda far, dropped
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_per_game == 79)  ### third tag, prob goes a bit too far
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 22)  ### 2nd, catch prob drops
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 228)  ### 1st, high catch prob short, drops
+
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 228)  ### 1st, high catch prob short, drops
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
@@ -146,14 +147,14 @@ for(i in 5:nrow(test_play)) {
                                                          -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) -
-                      (0.005 * (fps/0.05)), 
+                      (0.004 * (fps/0.05)), 
                       4),
                 round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                       model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
                                                          -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
                                                                                                         model_play$runner_basepath_accel[i-1]/10),
                                                          -(model_play$runner_basepath_velo[i-1]/80)) +
-                      (0.005 * (fps/0.05)), 
+                      (0.004 * (fps/0.05)), 
                       4),
                 by = 0.0005)
 
