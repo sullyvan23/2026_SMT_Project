@@ -107,11 +107,9 @@ one_on_data_sum <- one_on_data_sum %>% select(-c(proj_batter_base, prob))
 
 ##################################################################################################################################################################################
 
-plays_share <- one_on_data_sum %>% left_join(game_info, by = "game_string")
-plays_share <- plays_share %>% relocate(year:home_team, .after = player_code_runner) %>%
-                               filter(!is.na(player_code_runner))
+plays_share <- plays_share %>% filter(!is.na(player_code_runner))
 
-write.csv(plays_share, "one_on_data_sum.csv", row.names = FALSE)
+write.csv(plays_share, "plays_share.csv", row.names = FALSE)
 
 
 
