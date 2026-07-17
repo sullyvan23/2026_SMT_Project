@@ -156,7 +156,7 @@ for(i in 1:length(act)) {
 }
 act <- act/act
 logLoss(act, pred)
-### 0.7864373
+### 0.7904551
 
 summary(model)
 plot(model, pages = 1)
@@ -188,7 +188,7 @@ advance_first_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basep
                            family = ocat(R = 4), data = baserunner_1st_final)
 
 advance_second_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + 
-                                                 s(OF_ground_next2_angle, k = 3) + speed_95_runner + speed_95_throw,
+                                                 OF_ground_next2_angle + speed_95_runner,
                            family = ocat(R = 3), data = baserunner_2nd_final)
 
 advance_third_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo, 
