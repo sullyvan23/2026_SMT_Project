@@ -119,17 +119,17 @@ advance_three_data <- advance_three_data %>% mutate(advance_three = ifelse(succ_
 
 advance_one_data_sum <- advance_one_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
                                                              speed_95_throw),
-                                                    ~ weighted.mean(., if_caught_catch_prob)))
+                                                    ~ weighted.mean(., if_caught_catch_prob, na.rm = TRUE)))
 advance_one_data_sum <- advance_one_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
 advance_two_data_sum <- advance_two_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next2_x_dist:OF_next2_dist, 
                                                              OF_ground_next2_dist:OF_next2_velo_angle, speed_95_throw),
-                                                    ~ weighted.mean(., if_caught_catch_prob)))
+                                                    ~ weighted.mean(., if_caught_catch_prob, na.rm = TRUE)))
 advance_two_data_sum <- advance_two_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
 advance_three_data_sum <- advance_three_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next3_x_dist:OF_next3_dist, 
                                                                  OF_ground_next3_dist:OF_next3_velo_angle, speed_95_throw),
-                                                        ~ weighted.mean(., if_caught_catch_prob)))
+                                                        ~ weighted.mean(., if_caught_catch_prob, na.rm = TRUE)))
 advance_three_data_sum <- advance_three_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
 
 
