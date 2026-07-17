@@ -10,8 +10,6 @@ a1_folds <- createFolds(advance_one_final$advance_one, k = 10)
 a2_folds <- createFolds(advance_two_final$advance_two, k = 10)
 a3_folds <- createFolds(advance_three_final$advance_three, k = 10)
 
-check <- advance_one_final %>% filter(is.na(OF_ground_next_angle))
-
 
 act <- c()
 pred <- c()
@@ -19,7 +17,7 @@ for(fold in a1_folds) {
   print("-")
   train <- advance_one_final[-fold, ]
   test <- advance_one_final[fold, ]
-  model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo + OF_ground_next_angle, 
+  model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo, 
                family = binomial, data = train)
   act <- c(act, test$advance_one) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
