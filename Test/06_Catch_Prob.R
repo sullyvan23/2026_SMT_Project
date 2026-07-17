@@ -159,22 +159,25 @@ caught_by_prob_data <- caught_by_prob_data %>% pivot_wider(names_from = player_i
 caught_by_prob_data <- caught_by_prob_data %>% rename(b1 = "3", b2 = "4", b3 = "5", ss = "6",
                                                       lf = "7", cf = "8", rf = "9")
 caught_by_prob_data <- caught_by_prob_data %>% relocate(b1, b2, b3, ss, lf, cf, rf, .after = caught)
-caught_by_prob_data <- caught_by_prob_data %>% mutate(across(c(b1:rf), ~ ifelse(is.na(.), -10000, .)))
+caught_by_prob_data <- caught_by_prob_data %>% mutate(across(c(b1:rf), ~ ifelse(is.na(.)  |  . < -25, -25, .)))
 
 caught_by_prob_data <- caught_by_prob_data %>% mutate(caught_by = ifelse(caught == 1, player_id_event-2, 0))
 
 
-caught_by_model <- gam(list(caught_by ~ b1 + b2 + b3 + ss + lf + cf + rf,
+caught_by_model <- gam(list(caught_by ~ b1 + b2 + rf,
+                                      ~ b1 + b2 + ss + cf + rf,
+                                      ~ b2 + b3 + ss + lf,
                                       ~ b1 + b2 + b3 + ss + lf + cf + rf,
+                                      ~ b3 + ss + lf + cf,
                                       ~ b1 + b2 + b3 + ss + lf + cf + rf,
-                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
-                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
-                                      ~ b1 + b2 + b3 + ss + lf + cf + rf,
-                                      ~ b1 + b2 + b3 + ss + lf + cf + rf),
+                                      ~ b1 + b2 + ss + cf + rf),
                       family = multinom(K = 7), data = caught_by_prob_data)
 
+summary(caught_by_model)
 
 caught_by_prob_results <- cbind(caught_by_prob_data, predict(caught_by_model, type = "response"))
+
+check <- caught_by_prob_results %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197)
 
 write.csv(caught_by_prob_results, "caught_by_prob_results.csv", row.names = FALSE)
 
