@@ -78,6 +78,13 @@ catch_prob_data <- catch_prob_data %>% left_join(player_speed[,1:2], by = "playe
 catch_prob_data <- catch_prob_data %>% mutate(speed_95 = ifelse(is.na(speed_95), mean(player_speed$speed_95), speed_95)) %>% 
                                        rename(player_speed = speed_95)
 
+lag_check <- catch_prob_data %>% group_by(game_string, play_per_game, player_id) %>% slice(n())
+lag_check <- lag_check %>% filter(caught == 1) %>% group_by(game_string, play_per_game) %>%
+                           summarise(dist = min(OF_ground_dist, OF_8ft_dist))
+lag_check <- lag_check %>% filter(dist > 10) %>% mutate(play_key = paste0(game_string, play_per_game))
+
+catch_prob_data <- catch_prob_data %>% mutate(play_key = paste0(game_string, play_per_game)) %>%
+                                       filter(!play_key %in% lag_check$play_key) %>% select(-play_key)
 
 catch_prob_data <- catch_prob_data %>% relocate(player_caught, .after = last_col())
 
@@ -122,21 +129,21 @@ for(fold in catch_prob_folds) {
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
   model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                               te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3) + time, 
+                               te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist, k = 5) + time_since_hit + player_speed, 
                family = binomial, data = train)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.2229196
+### 0.1849643
 
 plot(model, page = 1)
 summary(model)
 
 ####################################################################################################################################################################
 
-catch_prob_model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                                        te(OF_ground_velo, OF_8ft_velo, k = 3) + OF + s(wall_8ft_dist, k = 5) + s(player_speed, k = 3), 
+catch_prob_model <- gam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
+                                        te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist, k = 5) + time_since_hit + player_speed, 
                                         family = binomial, data = catch_prob_data)
 
 catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"),
@@ -152,7 +159,7 @@ caught_by_prob_data <- caught_by_prob_data %>% pivot_wider(names_from = player_i
 caught_by_prob_data <- caught_by_prob_data %>% rename(b1 = "3", b2 = "4", b3 = "5", ss = "6",
                                                       lf = "7", cf = "8", rf = "9")
 caught_by_prob_data <- caught_by_prob_data %>% relocate(b1, b2, b3, ss, lf, cf, rf, .after = caught)
-caught_by_prob_data <- caught_by_prob_data %>% mutate(across(c(b1:rf), ~ ifelse(is.na(.), -50, .)))
+caught_by_prob_data <- caught_by_prob_data %>% mutate(across(c(b1:rf), ~ ifelse(is.na(.), -10000, .)))
 
 caught_by_prob_data <- caught_by_prob_data %>% mutate(caught_by = ifelse(caught == 1, player_id_event-2, 0))
 
