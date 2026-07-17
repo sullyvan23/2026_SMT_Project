@@ -60,6 +60,13 @@ advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_
                                                                       catch_prob / sum(catch_prob)),
                                         caught_prob = sum(catch_prob))
 
+advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
+                                 mutate(if_caught_catch_prob = ifelse(sum(catch_prob) == 0,
+                                                                      OF_ground_dist / sum(OF_ground_dist),
+                                                                      catch_prob / sum(catch_prob)),
+                                        if_caught_catch_prob = ifelse(if_caught_catch_prob < 1e-10, 0, if_caught_catch_prob),
+                                        caught_prob = sum(catch_prob))
+
 ##############################################################################################################################################################################################
 
 advance_one_data <- advance_data
