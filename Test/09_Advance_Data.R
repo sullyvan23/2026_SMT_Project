@@ -55,7 +55,9 @@ advance_data <- advance_data %>% mutate(runners_front = case_when(player_id_br =
                                  select(-c(first:third))
 
 advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
-                                 mutate(if_caught_catch_prob = catch_prob / sum(catch_prob),
+                                 mutate(if_caught_catch_prob = ifelse(sum(catch_prob) == 0,
+                                                                      OF_ground_dist / sum(OF_ground_dist),
+                                                                      catch_prob / sum(catch_prob)),
                                         caught_prob = sum(catch_prob))
 
 ##############################################################################################################################################################################################
