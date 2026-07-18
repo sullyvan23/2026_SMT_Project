@@ -120,13 +120,13 @@ for(fold in tag_end_folds) {
   print("-")
   train <- tag_end[-fold, ]
   test <- tag_end[fold, ]
-  model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + caught_prob + speed_95_throw, 
+  model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3), 
                family = binomial, data = train)
   act <- c(act, test$succ_tag) 
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1528475
+### 0.1511195
 
 plot(model, page = 1)
 summary(model)
