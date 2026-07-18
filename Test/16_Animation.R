@@ -108,7 +108,17 @@ animate_model <- function() {
     mutate(frame_id = match(timestamp_adj, unique(timestamp_adj)))
   
   # Make Field and Plot Points
-  p <- field_background_plot() +
+  if(animate_positions$home_team[1] == "ANI") {
+     p <- ANI_background()
+  } else if(animate_positions$home_team[1] == "ARN") {
+    p <- ARN_background()
+  } else if(animate_positions$home_team[1] == "PHD") {
+    p <- PHD_background()
+  } else if(animate_positions$home_team[1] == "VAS") {
+    p <- VAS_background()
+  }
+
+  p <- p +
     ## plotting defenders
     geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 0),
               aes(x = position_x, y = position_y, image = "fielder_1.png"),
