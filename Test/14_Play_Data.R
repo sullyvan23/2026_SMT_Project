@@ -107,7 +107,13 @@ one_on_data_sum <- one_on_data_sum %>% select(-c(proj_batter_base, prob))
 
 ##################################################################################################################################################################################
 
-plays_share <- plays_share %>% filter(!is.na(player_code_runner))
+plays_share <- one_on_data_sum %>% filter(!is.na(player_code_runner))
+
+plays_num <- plays_share %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+plays_num <- plays_num %>% group_by(player_code_runner) %>% summarise(count = n())
+plays_num <- plays_num %>% filter(count >= 5)
+
+plays_share <- plays_share %>% filter(player_code_runner %in% plays_num$player_code_runner)
 
 write.csv(plays_share, "plays_share.csv", row.names = FALSE)
 
