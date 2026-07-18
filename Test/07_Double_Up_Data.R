@@ -43,6 +43,8 @@ doubled_up_data <- doubled_up_data %>% left_join(catch_prob_data %>% select(game
 
 doubled_up_data <- doubled_up_data %>% mutate(runner_basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
                                               runner_basepath_velo = ifelse(is.na(runner_basepath_velo), lead(runner_basepath_velo), runner_basepath_velo),
+                                              runner_basepath_accel = (runner_basepath_velo - lag(runner_basepath_velo)) / ((timestamp - lag(timestamp))/1000),
+                                              runner_basepath_accel = ifelse(is.na(runner_basepath_accel), lead(runner_basepath_accel), runner_basepath_accel),
                                               og_basepath_dist = basepath - player_id_br + 10,
                                               OF_og_x_dist = pred_x - og_base_x,
                                               OF_og_y_dist = pred_y - og_base_y,
