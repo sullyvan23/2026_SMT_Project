@@ -3,21 +3,6 @@ doubled_up_data <- doubled_up_results %>% left_join(final_catch_prob_results, by
 
 doubled_up_data <- doubled_up_data %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "timestamp", "player_id_br" = "player_id"))
 doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, player_id_br) %>% filter(sum(is.na(field_x)) == 0)
-group <- 0
-doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, player_id_br) %>%
-                 group_modify(~{group <<- group + 1
-                              message(group/nrow(doubled_up_results))
-                                  
-                              x_model <- gam(field_x ~ s(timestamp, k = 10), data = .x )
-                              y_model <- gam(field_y ~ s(timestamp, k = 10), data = .x )
-
-                              .x$pred_x <- predict(x_model, newdata = .x) 
-                              .x$pred_y <- predict(y_model, newdata = .x)
-
-                              .x$rmse_x <- RMSE(.x$pred_x, .x$field_x)
-                              .x$rmse_y <- RMSE(.x$pred_y, .x$field_y)
-
-                              .x})
 
 doubled_up_data <- doubled_up_data %>% mutate(og_base_x = case_when(player_id_br == 11  ~  x_1b,
                                                                     player_id_br == 12  ~  x_2b,
@@ -26,27 +11,41 @@ doubled_up_data <- doubled_up_data %>% mutate(og_base_x = case_when(player_id_br
                                                                     player_id_br == 12  ~  y_2b,
                                                                     player_id_br == 13  ~  y_3b))
 
-doubled_up_data <- doubled_up_data %>% mutate(dist_1st = sqrt((pred_x - x_1b)^2 + (pred_y - y_1b)^2),
-                                              dist_2nd = sqrt((pred_x - x_2b)^2 + (pred_y - y_2b)^2),
-                                              dist_3rd = sqrt((pred_x - x_3b)^2 + (pred_y - y_3b)^2),
-                                              dist_home = sqrt((pred_x - x_home)^2 + (pred_y - y_home)^2))
-doubled_up_data <- doubled_up_data %>% mutate(basepath = case_when(pred_y < 0 | (pred_y < 50 & pred_x > 0)  ~  4, 
-                                                                   pred_y >= 50 & pred_x > x_2b  ~  1 + (dist_1st / (dist_1st + dist_2nd)),
-                                                                   pred_y >= y_3b & pred_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
-                                                                   pred_y < y_3b & pred_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
+doubled_up_data <- doubled_up_data %>% mutate(dist_1st = sqrt((field_x - x_1b)^2 + (field_y - y_1b)^2),
+                                              dist_2nd = sqrt((field_x - x_2b)^2 + (field_y - y_2b)^2),
+                                              dist_3rd = sqrt((field_x - x_3b)^2 + (field_y - y_3b)^2),
+                                              dist_home = sqrt((field_x - x_home)^2 + (field_y - y_home)^2))
+doubled_up_data <- doubled_up_data %>% mutate(basepath = case_when(field_y < 0 | (field_y < 50 & field_x > 0)  ~  4, 
+                                                                   field_y >= 50 & field_x > x_2b  ~  1 + (dist_1st / (dist_1st + dist_2nd)),
+                                                                   field_y >= y_3b & field_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
+                                                                   field_y < y_3b & field_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
+
+group <- 0
+doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, player_id_br) %>%
+                 group_modify(~{group <<- group + 1
+                              message(group/nrow(doubled_up_results))
+                                  
+                              basepath_model <- gam(basepath ~ s(timestamp, k = 10), data = .x )
+
+                              .x$pred_basepath <- predict(basepath_model, newdata = .x) 
+
+                              .x$rmse_bp <- RMSE(.x$pred_basepath, .x$basepath)
+
+                              .x})
+
+doubled_up_data <- doubled_up_data %>% select(-basepath) %>% rename(basepath = pred_basepath)
 
 doubled_up_data <- doubled_up_data %>% left_join(catch_prob_data %>% select(game_string, play_per_game, player_id, timestamp, pred_x, pred_y, OF_x_velo, OF_y_velo, OF_velo,
                                                                             time_to_ground, time_left_ground, ground_x, ground_y, OF_ground_x_dist, OF_ground_y_dist, OF_ground_dist, 
                                                                             player_code),
-                                                 by = c("game_string", "play_per_game", "timestamp", "player_id"),
-                                                 suffix = c("_runner", "_OF"))
+                                                 by = c("game_string", "play_per_game", "timestamp", "player_id"))
 
 
 doubled_up_data <- doubled_up_data %>% mutate(runner_basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
                                               runner_basepath_velo = ifelse(is.na(runner_basepath_velo), lead(runner_basepath_velo), runner_basepath_velo),
                                               og_basepath_dist = basepath - player_id_br + 10,
-                                              OF_og_x_dist = pred_x_OF - og_base_x,
-                                              OF_og_y_dist = pred_y_OF - og_base_y,
+                                              OF_og_x_dist = pred_x - og_base_x,
+                                              OF_og_y_dist = pred_y - og_base_y,
                                               OF_og_dist = sqrt(OF_og_x_dist^2 + OF_og_y_dist^2),
                                               ground_og_dist = sqrt((ground_x - og_base_x)^2 + (ground_y - og_base_y)^2))
 
@@ -79,7 +78,7 @@ write.csv(doubled_up_data, "doubled_up_data.csv", row.names = FALSE)
 
 ##############################################################################################################################################################################################
 
-doubled_up_data_sum <- doubled_up_data %>% mutate(across(c(player_id, pred_x_OF:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_og_x_dist:OF_og_dist, OF_ground_og_dist:OF_og_velo_angle, 
+doubled_up_data_sum <- doubled_up_data %>% mutate(across(c(player_id, pred_x:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_og_x_dist:OF_og_dist, OF_ground_og_dist:OF_og_velo_angle, 
                                                            speed_95_throw),
                                                          ~ weighted.mean(., if_caught_catch_prob)))
 doubled_up_data_sum <- doubled_up_data_sum %>% slice(1) %>% select(-c(catch_prob, player_code_OF, if_caught_catch_prob))
