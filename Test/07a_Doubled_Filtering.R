@@ -1,5 +1,5 @@
 
-doubled_up_final <- doubled_up_data_sum_pred %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+doubled_up_final <- doubled_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
 
 ggplot(doubled_up_final, aes(x = og_basepath_dist, y = ground_og_dist, color = safe_back)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
@@ -16,19 +16,19 @@ for(fold in final_doubled_folds) {
   print("-")
   train <- doubled_up_final[-fold, ]
   test <- doubled_up_final[fold, ]
-  model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo + caught_prob, 
+  model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo, 
                family = binomial, data = train)
   act <- c(act, test$safe_back)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.03335394
+### 0.03627442
 
 plot(model, page = 1)
 summary(model)
 
 
-final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo + caught_prob + speed_95_throw, 
+final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo + speed_95_throw, 
                            family = binomial, data = doubled_up_final)
 summary(final_doubled_model)
 plot(final_doubled_model, page = 1)
