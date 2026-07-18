@@ -1,4 +1,24 @@
 
+wall_field_ARN <- expand.grid(spray_angle = seq(-pi/4, 0, by = 0.01))
+wall_field_ARN <- bind_rows(wall_field_ARN, wall_field_ARN %>% mutate(spray_angle = -spray_angle))
+wall_field_ARN <- wall_field_ARN %>% mutate(home_dist = predict(wall_ARN_model, newdata = wall_field_ARN),
+                                            field_x = home_dist * sin(spray_angle),
+                                            field_y = home_dist * cos(spray_angle))
+cover_line_ARN <- wall_field_ARN %>% filter(spray_angle == pi/4)
+dists <- seq(cover_line_ARN$home_dist[1]+4, 390, by = 1)
+cover_line_ARN <- cover_line_ARN %>% slice(rep(1,length(dists)))
+cover_line_ARN$home_dist <- dists
+temp <- wall_field_ARN %>% filter(spray_angle == -pi/4)
+dists <- seq(temp$home_dist[1]+4, 390, by = 1)
+temp <- temp %>% slice(rep(1,length(dists)))
+temp$home_dist <- dists
+cover_line_ARN <- bind_rows(cover_line_ARN, temp)
+cover_line_ARN <- cover_line_ARN %>% mutate(field_x = home_dist * sin(spray_angle),
+                                            field_y = home_dist * cos(spray_angle))
+
+
+##################################################################################################################################################################################
+
 library(png)
 field_background <- readPNG("field_background.png")
 
@@ -15,17 +35,51 @@ field_background_plot <- function() {
   theme_void()
 }
 
+##################################################################################################################################################################################
 
-wall_field <- expand.grid(spray_angle = seq(-0.78, 0.78, by = 0.01))
-wall_field <- wall_field %>% mutate(home_dist = predict(wall_ANI_model, newdata = wall_field),
-                                    field_x = home_dist * sin(spray_angle),
-                                    field_y = home_dist * cos(spray_angle))
+ANI_background <- function() {
+  field_background_plot() +
+  geom_point(data = wall_field_ANI,
+             aes(x = field_x, y = field_y),
+             shape = 18, size = 1) +
+  geom_point(data = cover_line_ANI,
+             aes(x = field_x, y = field_y),
+             shape = 23, size = 0.5, color = "#1E6432", fill = "#1E6432")
+}
+
+ARN_background <- function() {
+  field_background_plot() +
+  geom_point(data = wall_field_ARN,
+             aes(x = field_x, y = field_y),
+             shape = 18, size = 1) +
+  geom_point(data = cover_line_ARN,
+             aes(x = field_x, y = field_y),
+             shape = 23, size = 0.5, color = "#1E6432", fill = "#1E6432")
+}
+
+PHD_background <- function() {
+  field_background_plot() +
+  geom_point(data = wall_field_PHD,
+             aes(x = field_x, y = field_y),
+             shape = 18, size = 1) +
+  geom_point(data = cover_line_PHD,
+             aes(x = field_x, y = field_y),
+             shape = 23, size = 0.5, color = "#1E6432", fill = "#1E6432")
+}
+
+VAS_background <- function() {
+  field_background_plot() +
+  geom_point(data = wall_field_VAS,
+             aes(x = field_x, y = field_y),
+             shape = 18, size = 1) +
+  geom_point(data = cover_line_VAS,
+             aes(x = field_x, y = field_y),
+             shape = 23, size = 0.5, color = "#1E6432", fill = "#1E6432")
+}
 
 
-field_background_plot() +
-geom_point(data = wall_field,
-           aes(x = field_x, y = field_y),
-           shape = 15)
+
+
 
 
 
