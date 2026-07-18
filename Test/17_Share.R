@@ -57,12 +57,12 @@ go_back_function <- function(input_data) {
 
 ### adding probabilities of advancing certain bases if ball drops
 add_advance_probs <- function(input_dataset) {
-  if(test_play$player_id_br[1] == 11) {
+  if(input_dataset$player_id_br[1] == 11) {
     advance_probs <- data.frame(predict(advance_first_model, newdata = input_dataset, type = "response"))[,-1]
-  } else if(test_play$player_id_br[1] == 12) {
+  } else if(input_dataset$player_id_br[1] == 12) {
     advance_probs <- data.frame(predict(advance_second_model, newdata = input_dataset, type = "response"))[,-1]
     advance_probs[,3] <- NA
-  } else if(test_play$player_id_br[1] == 13) {
+  } else if(input_dataset$player_id_br[1] == 13) {
     advance_probs <- data.frame(predict(advance_third_model, newdata = input_dataset, type = "response"))
     advance_probs[,2:3] <- NA
   }
