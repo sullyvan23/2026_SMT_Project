@@ -100,7 +100,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d090_PHD_VAS", play_p
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
-max_accel <- max(max_speed*(95/140), test_play$speed_95_runner[1]/0.681818/110)
+max_accel <- max(max_speed*(95/125), test_play$speed_95_runner[1]/0.681818/125)
 fps <- test_play$fps[1]
 
 ### ellipse for keeping motion within normal parameters
