@@ -2,6 +2,7 @@
 if(!require("showtext")) {install.packages("showtext")}; library(showtext)
 library(showtext)
 font_add_google("Press Start 2P", "Press_Start_2P")
+showtext_auto()
 
 library(ggimage)
 
@@ -26,6 +27,7 @@ animate_positions <- animate_positions %>% group_by(timestamp) %>%
 
 animate_model()
 
+anim_save("example.gif", animation = last_animation())
 
 ###########################################################################################################################################################################################
 ### DON'T RE-ENTER
