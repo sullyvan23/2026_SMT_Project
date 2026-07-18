@@ -95,7 +95,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_p
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 145) ### 1st, go really far
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 145) ### 2nd, go really far
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
