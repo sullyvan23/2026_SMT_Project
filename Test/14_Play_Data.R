@@ -25,29 +25,29 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(next3_base_x = case_when(pla
                                                                              TRUE  ~  NA),
                                                     next3_base_y = case_when(player_id_br == 11  ~  y_home,
                                                                              TRUE  ~  NA))
-all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_og_x_dist = pred_x_OF - og_base_x,
-                                                    OF_og_y_dist = pred_y_OF - og_base_y,
+all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_og_x_dist = pred_x - og_base_x,
+                                                    OF_og_y_dist = pred_y - og_base_y,
                                                     OF_og_dist = sqrt(OF_og_x_dist^2 + OF_og_y_dist^2),
                                                     ground_og_dist = sqrt((ground_x - og_base_x)^2 + (ground_y - og_base_y)^2),          
                                                     OF_ground_og_dist = ((OF_og_x_dist * OF_ground_x_dist) + (OF_og_y_dist * OF_ground_y_dist)) / 
                                                                           OF_og_dist,
                                                     OF_ground_og_angle = acos(OF_ground_og_dist / OF_ground_dist))
-all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next_x_dist = pred_x_OF - next_base_x,
-                                                    OF_next_y_dist = pred_y_OF - next_base_y,
+all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next_x_dist = pred_x - next_base_x,
+                                                    OF_next_y_dist = pred_y - next_base_y,
                                                     OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
                                                     ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2),          
                                                     OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
                                                                           OF_next_dist,
                                                     OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist))
-all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next2_x_dist = pred_x_OF - next2_base_x,
-                                                    OF_next2_y_dist = pred_y_OF - next2_base_y,
+all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next2_x_dist = pred_x - next2_base_x,
+                                                    OF_next2_y_dist = pred_y - next2_base_y,
                                                     OF_next2_dist = sqrt(OF_next2_x_dist^2 + OF_next2_y_dist^2),
                                                     ground_next2_dist = sqrt((ground_x - next2_base_x)^2 + (ground_y - next2_base_y)^2),          
                                                     OF_ground_next2_dist = ((OF_next2_x_dist * OF_ground_x_dist) + (OF_next2_y_dist * OF_ground_y_dist)) / 
                                                                           OF_next2_dist,
                                                     OF_ground_next2_angle = acos(OF_ground_next2_dist / OF_ground_dist))  
-all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x_OF - next3_base_x,
-                                                    OF_next3_y_dist = pred_y_OF - next3_base_y,
+all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x - next3_base_x,
+                                                    OF_next3_y_dist = pred_y - next3_base_y,
                                                     OF_next3_dist = sqrt(OF_next3_x_dist^2 + OF_next3_y_dist^2),
                                                     ground_next3_dist = sqrt((ground_x - next3_base_x)^2 + (ground_y - next3_base_y)^2),          
                                                     OF_ground_next3_dist = ((OF_next3_x_dist * OF_ground_x_dist) + (OF_next3_y_dist * OF_ground_y_dist)) / 
@@ -59,28 +59,20 @@ all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...82",
                                                     batter_3 = "...84")
 
 ### NEED
-### time_to_ground, time_left_ground, basepath, og_basepath_dist, runner_basepath_velo
+### time_to_ground, time_left_ground, basepath, og_basepath_dist, runner_basepath_velo, runner_baseball_accel
 ### ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist
 ### OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle, 
 ### speed_95_runner, speed_95_throw, caught_prob
 
 all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, timestamp, player_id_br, player_code_runner,
                                                     time_to_ground, time_left_ground, ground_x, ground_y, 
-                                                    basepath, og_basepath_dist, runner_basepath_velo, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
+                                                    basepath, og_basepath_dist, runner_basepath_velo, runner_basepath_accel, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
                                                     OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
                                                     speed_95_runner, speed_95_throw, caught_prob, batter_1, batter_2, batter_3)
 all_plays_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
                                              mutate(fps = time_left_ground - lead(time_left_ground),
-                                                    fps = ifelse(is.na(fps), lag(fps), fps),
-                                                    runner_basepath_velo = ifelse(row_number() == 1, 
-                                                                                  lead(runner_basepath_velo) + (lead(runner_basepath_velo) - lead(runner_basepath_velo, 2)), 
-                                                                                  runner_basepath_velo))
+                                                    fps = ifelse(is.na(fps), lag(fps), fps))
 
-all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_accel = (runner_basepath_velo - lag(runner_basepath_velo)) / ((timestamp - lag(timestamp))/1000),
-                                                    runner_basepath_accel = ifelse(row_number() == 1, 
-                                                                                   lead(runner_basepath_accel), 
-                                                                                   runner_basepath_accel)) %>%
-                                             relocate(runner_basepath_accel, .after = runner_basepath_velo)
 all_plays_data_sum <- all_plays_data_sum %>% mutate(runner_basepath_accel_2 = lag(runner_basepath_accel),
                                                     runner_basepath_accel_2 = ifelse(row_number() == 1, 
                                                                                    lead(runner_basepath_accel_2), 
