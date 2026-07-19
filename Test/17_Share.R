@@ -157,7 +157,7 @@ for(i in 5:nrow(test_play)) {
                                                          -(model_play$runner_basepath_velo[i-1]/80)) +
                       (ifelse(model_play$runner_basepath_velo[i-1] < 0, 0.005, 0.004) * (fps/0.05)), 
                       3),
-                by = 0.0005)
+                by = 0.001)
 
   ### new dataset of all potential next accelerations with next timestamps other numbers, changing position and velo to account for acceleration
   next_time_check <- test_play[i,] %>% slice(rep(1,length(accels)))
