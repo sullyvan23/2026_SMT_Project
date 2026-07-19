@@ -162,12 +162,19 @@ for(g in 1:max(plays_share_data$group)) {
 write.csv(modeled_play_data, "modeled_play_data.csv", row.names = FALSE)
 save.image("new.Rdata")
 
+##########################################################################################################################################################################################
+
+play_vs_model_data <- plays_share_data[,c(1:5,49)] %>% left_join(modeled_play_data[,c(1:4,49)],
+                                                                 by = c("game_string", "play_per_game", "player_id_br", "timestamp"),
+                                                                 suffix = c("_play", "_model"))
+
+play_vs_model_summarise <- play_vs_model_data %>% group_by(game_string, play_per_game, player_id_br, player_code_runner) %>%
+                                                  summarise(run_exp_play = mean(run_exp_play),
+                                                            run_exp_model = mean(run_exp_model)) %>%
+                                                  mutate(percent = run_exp_play / run_exp_model)
 
 
-
-
-
-
+hist(play_vs_model_summarise$percent, breaks = 50)
 
 
 
