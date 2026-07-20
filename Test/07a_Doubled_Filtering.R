@@ -22,7 +22,7 @@ for(fold in final_doubled_folds) {
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.03627442
+### 0.03134778
 
 plot(model, page = 1)
 summary(model)
