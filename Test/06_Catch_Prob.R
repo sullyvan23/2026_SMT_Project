@@ -155,7 +155,7 @@ summary(model)
 ####################################################################################################################################################################
 
 catch_prob_model <- gam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                                        te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist, k = 5) + time_since_hit + player_speed, 
+                                        te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist, k = 10) + time_since_hit + player_speed, 
                                         family = binomial, data = catch_prob_data)
 
 catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"),
