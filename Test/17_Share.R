@@ -231,6 +231,11 @@ for(i in 5:nrow(test_play)) {
 
 ##################################################################################################################################################################
 
+test_play <- plays_share_data %>% filter(game_string == "y1_d199_JGO_VAS", play_per_game == 126, player_id_br == 11) %>% select(-group)
+model_play <- modeled_play_data %>% filter(game_string == "y1_d199_JGO_VAS", play_per_game == 126, player_id_br == 11) %>% select(-group)
+
+##################################################################################################################################################################
+
 ### plot of position over time (actual = black, model = red)
 plot(-test_play$time_left_ground, test_play$basepath, col = "black", ylim = c(min(test_play$basepath,model_play$basepath), max(test_play$basepath,model_play$basepath)))
 points(-model_play$time_left_ground, model_play$basepath, col = "red")
