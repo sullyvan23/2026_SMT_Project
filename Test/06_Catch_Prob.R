@@ -100,6 +100,18 @@ library(Metrics)
 catch_prob_data <- catch_prob_data %>% mutate(key = paste0(game_string, play_per_game, "_", player_id)) %>%
                                        relocate(key, .after = player_id)
 
+catch_prob_data <- catch_prob_data %>% filter(time_left_ground >= 0)
+
+catch_prob_data <- catch_prob_data %>% mutate(OF_8ft_dist = ifelse(time_left_8ft < 0,
+                                                                   ((OF_8ft_dist * time_left_ground) + (OF_ground_dist * -time_left_8ft)) / (time_left_ground - time_left_8ft),
+                                                                   OF_8ft_dist),
+                                              OF_8ft_velo = ifelse(time_left_8ft < 0,
+                                                                   ((OF_8ft_velo * time_left_ground) + (OF_ground_velo * -time_left_8ft)) / (time_left_ground - time_left_8ft),
+                                                                   OF_8ft_velo),
+                                              OF_8ft_angle = ifelse(time_left_8ft < 0,
+                                                                   ((OF_8ft_angle * time_left_ground) + (OF_ground_angle * -time_left_8ft)) / (time_left_ground - time_left_8ft),
+                                                                   OF_8ft_angle))
+
 set.seed(148)
 catch_prob_folds <- groupKFold(catch_prob_data$key, k = 2)
 
@@ -128,14 +140,14 @@ for(fold in catch_prob_folds) {
   print("-")
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
-  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                               te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist, k = 5) + time_since_hit + player_speed, 
+  model <- bam(player_caught ~ s(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
+                               te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist) + time_since_hit + player_speed, 
                family = binomial, data = train)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1849643
+### 0.1827966
 
 plot(model, page = 1)
 summary(model)
