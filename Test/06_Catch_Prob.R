@@ -140,14 +140,15 @@ for(fold in catch_prob_folds) {
   print("-")
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
-  model <- bam(player_caught ~ s(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 4) + te(OF_ground_angle, OF_8ft_angle, k = 3) +
-                               te(OF_ground_velo, OF_8ft_velo, k = 3) + s(wall_8ft_dist) + time_since_hit + player_speed, 
+  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 3) + te(OF_8ft_dist, time_left_8ft, k = 3) + ti(time_left_ground, time_left_8ft, k = 3) +
+                               te(OF_ground_angle, OF_8ft_angle, k = 3) + te(OF_ground_velo, OF_8ft_velo, k = 3) + te(OF_ground_velo_angle, OF_8ft_velo_angle, k = 3) +
+                               s(wall_8ft_dist), 
                family = binomial, data = train, discrete = TRUE)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1827966
+### 0.2270599
 
 plot(model, page = 1)
 summary(model)
