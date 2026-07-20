@@ -31,7 +31,7 @@ advance_data <- advance_data %>% select(-basepath) %>% rename(basepath = pred_ba
 
 advance_data <- advance_data %>% left_join(catch_prob_data %>% select(game_string, play_per_game, player_id, timestamp, pred_x, pred_y, OF_x_velo, OF_y_velo, OF_velo,
                                                                       time_to_ground, time_left_ground, ground_x, ground_y, OF_ground_x_dist, OF_ground_y_dist, OF_ground_dist, 
-                                                                      player_code),
+                                                                      wall_ground_dist, player_code),
                                            by = c("game_string", "play_per_game", "timestamp", "player_id"),
                                            suffix = c("_runner", "_OF"))
 
