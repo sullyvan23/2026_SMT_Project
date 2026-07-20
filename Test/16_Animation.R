@@ -8,21 +8,26 @@ library(ggimage)
 
 
 animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
+### OR
+animate_positions <- modeled_play_data %>% filter(game_string == "y1_d199_JGO_VAS", play_per_game == 126, player_id_br == 11) %>%
+                                           select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
+
+
 animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
                                            mutate(player_id = player_id + 0.5,
                                                   field_x = predict(basepath_x_model, newdata = animate_positions),
                                                   field_y = predict(basepath_y_model, newdata = animate_positions)) %>%
                                            select(-basepath)
 animate_positions <- bind_rows(animate_positions,
-                               player_positions %>% filter(game_string == model_play$game_string[1],
-                                                           play_per_game == model_play$play_per_game[1])) %>% 
-                      arrange(timestamp, player_id)
+                               player_positions %>% filter(game_string == animate_positions$game_string[1],
+                                                           play_per_game == animate_positions$play_per_game[1]))
 animate_positions <- animate_positions %>% group_by(timestamp) %>%
                                            mutate(caught_prob = ifelse(!is.na(caught_prob), 
                                                                        paste0(as.character( pmax(pmin(5*round(caught_prob*20), 95), 5) ),
                                                                                            "%"),
                                                                        "")) %>% 
                                             ungroup()
+animate_positions <- animate_positions %>% arrange(timestamp)
 
 
 animate_model()
