@@ -9,7 +9,7 @@ library(ggimage)
 
 animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 ### OR
-animate_positions <- modeled_play_data %>% filter(game_string == "y1_d199_JGO_VAS", play_per_game == 126, player_id_br == 11) %>%
+animate_positions <- modeled_play_data %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210, player_id_br == 11) %>%
                                            select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 
 
