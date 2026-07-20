@@ -147,7 +147,7 @@ for(fold in b1_folds) {
   print("-")
   train <- baserunner_1st_final[-fold, ]
   test <- baserunner_1st_final[fold, ]
-  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + OF_ground_next3_angle,
+  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5),
                family = ocat(R = 4), data = train)
   act <- c(act, test$succ_bases_advanced) 
   pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
