@@ -18,10 +18,10 @@ cover_line_ARN <- cover_line_ARN %>% mutate(field_x = home_dist * sin(spray_angl
 
 
 ##################################################################################################################################################################################
-
 library(png)
-field_background <- readPNG("field_background.png")
 
+
+field_background <- readPNG("field_background.png")
 field_background_plot <- function() {
   ggplot() + 
   annotation_raster(field_background,
@@ -34,6 +34,26 @@ field_background_plot <- function() {
   ) +
   theme_void()
 }
+
+field_background_plot() + geom_point(aes(x = x_1b, y = y_1b))
+
+
+
+from_first <- readPNG("from_first.png")
+first_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_first,
+                    xmin = -15.3, xmax = 105.3,
+                    ymin = 61, ymax = 115.9) +
+  coord_fixed(
+    xlim = c(-15.3, 105.3),
+    ylim = c(61, 115.9),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+first_base_line_plot() + geom_point(aes(x = 0, y = 90))
 
 ##################################################################################################################################################################################
 
