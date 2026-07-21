@@ -1,5 +1,5 @@
 
-all_plays_data_sum <- bind_rows(doubled_up_data_sum, tag_up_data_sum, advance_one_data_sum)
+all_plays_data_sum <- bind_rows(doubled_up_data_sum, tag_up_data_sum, advance_data_sum)
 all_plays_data_sum <- all_plays_data_sum %>% distinct(game_string, play_per_game, player_id_br, timestamp, .keep_all = TRUE)
 
 
@@ -54,20 +54,20 @@ all_plays_data_sum <- all_plays_data_sum %>% mutate(OF_next3_x_dist = pred_x - n
                                                                           OF_next3_dist,
                                                     OF_ground_next3_angle = acos(OF_ground_next3_dist / OF_ground_dist))
 all_plays_data_sum <- cbind(all_plays_data_sum, predict(batter_bases_model, newdata = all_plays_data_sum, type = "response"))
-all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...82",
-                                                    batter_2 = "...83",
-                                                    batter_3 = "...84")
+all_plays_data_sum <- all_plays_data_sum %>% rename(batter_1 = "...84",
+                                                    batter_2 = "...85",
+                                                    batter_3 = "...86")
 
 ### NEED
 ### time_to_ground, time_left_ground, basepath, og_basepath_dist, runner_basepath_velo, runner_baseball_accel
-### ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist
+### ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist, wall_ground_dist,
 ### OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle, 
 ### speed_95_runner, speed_95_throw, caught_prob
 
 all_plays_data_sum <- all_plays_data_sum %>% select(game_string, play_per_game, timestamp, player_id_br, player_code_runner,
                                                     time_to_ground, time_left_ground, ground_x, ground_y, 
                                                     basepath, og_basepath_dist, runner_basepath_velo, runner_basepath_accel, ground_og_dist, ground_next_dist, ground_next2_dist, ground_next3_dist,
-                                                    OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
+                                                    wall_ground_dist, OF_ground_og_angle, OF_ground_next_angle, OF_ground_next2_angle, OF_ground_next3_angle,
                                                     speed_95_runner, speed_95_throw, caught_prob, batter_1, batter_2, batter_3)
 all_plays_data_sum <- all_plays_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>%
                                              mutate(fps = time_left_ground - lead(time_left_ground),
