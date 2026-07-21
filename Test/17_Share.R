@@ -89,14 +89,14 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_per_game == 79)  ### third tag, prob goes a bit too far
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 22)  ### 2nd, catch prob drops
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 228)  ### 1st, high catch prob short, drops
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 145) ### 2nd, go really far
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d090_PHD_VAS", play_per_game == 21) ### 1st, line drive drops steal
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 22)  ### 2nd, catch prob drops
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210) ### 1st, runnr go, model didn't do well
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
