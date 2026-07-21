@@ -26,12 +26,17 @@ animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
                                            select(-basepath)
 animate_positions <- bind_rows(animate_positions,
                                player_positions %>% filter(game_string == animate_positions$game_string[1],
-                                                           play_per_game == animate_positions$play_per_game[1]))
+                                                           play_per_game == animate_positions$play_per_game[1]),
+                               ball_positions %>% filter(game_string == animate_positions$game_string[1],
+                                                         play_per_game == animate_positions$play_per_game[1]) %>%
+                                                  rename(field_x = ball_position_x,
+                                                         field_y = ball_position_y))
 animate_positions <- animate_positions %>% group_by(timestamp) %>%
                                            mutate(caught_prob = ifelse(!is.na(caught_prob), 
                                                                        paste0(as.character( pmax(pmin(5*round(caught_prob*20), 95), 5) ),
                                                                                            "%"),
-                                                                       "")) %>% 
+                                                                       ""),
+                                                  home_team = substr(game_string, nchar(game_string)-2, nchar(game_string))) %>% 
                                             ungroup()
 animate_positions <- animate_positions %>% arrange(timestamp)
 
@@ -67,49 +72,33 @@ animate_model <- function() {
     count(fps) %>% slice_max(n) %>% pull(fps)
   
   # Find the time of the pitch
-  time_of_pitch <-  ball_events %>%
+  time_of_pitch <- ball_events %>%
     filter(game_string == animate_positions$game_string[1] &
              play_per_game == animate_positions$play_per_game[1] &
              ball_eventcode == 1) %>%
     collect() %>%
     pull(timestamp)
   
-  # Get the Ball Tracking Data
-  ball_tracking_data <- ball_positions %>%
-    ## Filter to correct game
-    filter(game_string == animate_positions$game_string[1] &
-             play_per_game == animate_positions$play_per_game[1]) %>%
-    ## Collect from Arrow
-    collect() %>%
-    ## Add on a type and player_id column to match with player_tracking_data
-    mutate(type = "ball", 
-           player_id = NA) %>% 
-    ## Reorder and Rename Columns
-    dplyr::select(game_string:timestamp, player_id, type, position_x = ball_position_x,
-           position_y = ball_position_y, position_z = ball_position_z, everything())
-  
-  # Get the Player Tracking Data
-  player_tracking_data <- animate_positions %>%
+  # Get the Tracking Data
+  tracking_data <- animate_positions %>%
     collect() %>%
     ## Convert player_id to numeric
     mutate(player_id = as.numeric(player_id)) %>%
-    ## Calculate type and put position_z as NA
-    mutate(type = case_when((player_id %% 1) == 0.5 ~  "computer_runner",
+    ## Calculate type
+    mutate(type = case_when(is.na(player_id)  ~  "ball",
+                            (player_id%%1) == 0.5 ~  "computer_runner",
                             (player_id+0.5) %in% animate_positions$player_id  ~  "actual_runner",
                             player_id <= 9 ~ "defense",
                             between(player_id, 10, 13) ~ "offense",
                             between(player_id, 14, 17) ~ "umpire",
-                            player_id %in% c(18, 19) ~ "coach"),
-           position_z = NA
-    ) %>%
+                            player_id %in% c(18, 19) ~ "coach")) %>%
     ## Reorder and Rename Columns
-    dplyr::select(game_string:timestamp, player_id, type, position_x = field_x,
-           position_y = field_y, position_z, everything())
+    dplyr::select(game_string:caught_prob, player_id, type, field_x, field_y, field_z = ball_position_z, everything())
   
   # Combine all tracking data into 1 data frame
-  tracking_data <- bind_rows(player_tracking_data, ball_tracking_data) %>% 
+  tracking_data <- tracking_data %>% 
     ## Convert timestamps and positions to numeric
-    mutate(across(c(timestamp, position_x, position_y, position_z), 
+    mutate(across(c(timestamp, field_x, field_y, field_z), 
                   as.numeric)) %>%
     ## Order data chronologically
     arrange(timestamp) %>%
@@ -134,27 +123,27 @@ animate_model <- function() {
   p <- p +
     ## plotting defenders
     geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 0),
-              aes(x = position_x, y = position_y, image = "fielder_1.png"),
+              aes(x = field_x, y = field_y, image = "fielder_1.png"),
               size = 0.04) +
     geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 1),
-              aes(x = position_x, y = position_y, image = "fielder_2.png"),
+              aes(x = field_x, y = field_y, image = "fielder_2.png"),
               size = 0.04) +
     geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 2),
-              aes(x = position_x, y = position_y, image = "fielder_3.png"),
+              aes(x = field_x, y = field_y, image = "fielder_3.png"),
               size = 0.04) +
     ### plotting actual runner
     geom_image(data = tracking_data %>% filter(type == "actual_runner"),
-               aes(x = position_x, y = position_y, image = "actual_runner.png"),
+               aes(x = field_x, y = field_y, image = "actual_runner.png"),
                size = 0.05, alpha = 0.8) +
     ### plotting computer runner
     geom_image(data = tracking_data %>% filter(type == "computer_runner"),
-               aes(x = position_x, y = position_y, image = "computer_runner.png"),
+               aes(x = field_x, y = field_y, image = "computer_runner.png"),
                size = 0.05, alpha = 0.8) +
     ## Plot the ball
     geom_point(data = tracking_data %>%
                  filter(type == "ball"),
-               aes(x = position_x, y = position_y,
-                   size = position_z),
+               aes(x = field_x, y = field_y,
+                   size = field_z),
                fill = "white",
                shape = 21,
                show.legend = F) +
