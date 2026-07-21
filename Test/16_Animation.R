@@ -107,6 +107,12 @@ animate_model <- function() {
     filter(timestamp >= time_of_pitch) %>%
     ## Create a frame_id for animation
     mutate(frame_id = match(timestamp_adj, unique(timestamp_adj)))
+
+  tracking_data <- tracking_data %>% mutate(image = ifelse(type == "defense",
+                                                           case_when(((player_id + rand_num) %% 3) == 0  ~  "fielder_1.png",
+                                                                     ((player_id + rand_num) %% 3) == 1  ~  "fielder_2.png",
+                                                                     ((player_id + rand_num) %% 3) == 2  ~  "fielder_3.png"),
+                                                           NA))
   
   # Make Field and Plot Points
   if(animate_positions$home_team[1] == "ANI") {
@@ -120,16 +126,10 @@ animate_model <- function() {
   }
 
   p <- p +
-    ## plotting defenders
-    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 0),
-              aes(x = field_x, y = field_y, image = "fielder_1.png"),
-              size = 0.04) +
-    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 1),
-              aes(x = field_x, y = field_y, image = "fielder_2.png"),
-              size = 0.04) +
-    geom_image(data = tracking_data %>% filter(type == "defense"  &  ((player_id + rand_num) %% 3) == 2),
-              aes(x = field_x, y = field_y, image = "fielder_3.png"),
-              size = 0.04) +
+    ### plotting defenders
+    geom_image(data = tracking_data %>% filter(type == "defense"),
+              aes(x = field_x, y = field_y, image = image),
+              size = 0.05) +
     ### plotting actual runner
     geom_image(data = tracking_data %>% filter(type == "actual_runner"),
                aes(x = field_x, y = field_y, image = "actual_runner.png"),
