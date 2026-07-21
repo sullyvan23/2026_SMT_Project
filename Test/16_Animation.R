@@ -12,10 +12,11 @@ if(!require("sportyR")) {install.packages("sportyR")}; library(sportyR)
 if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
 
 
-animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
-### OR
+
 animate_positions <- modeled_play_data %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210, player_id_br == 11) %>%
                                            select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
+### OR
+animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 
 
 animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
