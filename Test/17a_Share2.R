@@ -129,7 +129,7 @@ add_advance_probs <- function(input_dataset) {
 #####################################################################################################################################################################################
 
 ### some plays I've looked at to potentially choose from
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
@@ -146,12 +146,12 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 228)  ### 1st, high catch prob short, drops
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 145) ### 2nd, go really far, high catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d090_PHD_VAS", play_per_game == 21) ### 1st, line drive drops steal
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210) ### 1st, runner go, model didn't do well
 
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210) ### 1st, runner go, model didn't do well
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
