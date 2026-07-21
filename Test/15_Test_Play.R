@@ -206,10 +206,10 @@ points(model_play$og_basepath_dist, model_play$runner_basepath_velo, col = "red"
 
 ellipse <- expand.grid(runner_basepath_velo = seq(-max_speed, max_speed, by = 0.01),
                        runner_basepath_accel = seq(-max_accel, max_accel, by = 0.01),
-                       og_basepath_dist = seq(0, 0.35, by = 0.01)) %>%
+                       og_basepath_dist = seq(0, 0.25, by = 0.01)) %>%
            mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
                             (runner_basepath_accel^2 / max_accel^2) +
-                            ((og_basepath_dist-0.325)^2 / 0.3^2)) %>%
+                            ((og_basepath_dist-0.225)^2 / 0.2^2)) %>%
            filter(ellipse <= 1)
 plot(ellipse$og_basepath_dist, ellipse$runner_basepath_velo, col = "black")
 points(test_play$og_basepath_dist, test_play$runner_basepath_velo, col = "blue")
