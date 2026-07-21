@@ -6,6 +6,11 @@ showtext_auto()
 
 library(ggimage)
 
+if(!require("arrow")) {install.packages("arrow")}; library(arrow)
+if(!require("tidyverse")) {install.packages("tidyverse")}; library(tidyverse)
+if(!require("sportyR")) {install.packages("sportyR")}; library(sportyR)
+if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
+
 
 animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 ### OR
