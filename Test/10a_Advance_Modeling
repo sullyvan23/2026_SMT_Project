@@ -184,16 +184,20 @@ logLoss(act, pred)
 ### 0.3597488
 
 
+baserunner_1st_final <- baserunner_1st_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
+baserunner_2nd_final <- baserunner_2nd_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
+advance_one_final <- advance_one_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
 
-advance_first_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + 
+
+advance_first_model <- gam(succ_bases_advanced ~ forward_basepath + forward_velo + te(ground_x, ground_y, k = 5) + 
                                                  speed_95_runner,
                            family = ocat(R = 4), data = baserunner_1st_final)
 
-advance_second_model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + 
+advance_second_model <- gam(succ_bases_advanced ~ forward_basepath + forward_velo + te(ground_x, ground_y, k = 5) + 
                                                   speed_95_runner,
                            family = ocat(R = 3), data = baserunner_2nd_final)
 
-advance_third_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basepath_velo, 
+advance_third_model <- gam(advance_one ~ forward_basepath + ground_next_dist + forward_velo, 
                            family = binomial, data = advance_one_final)
 
 summary(advance_second_model)
