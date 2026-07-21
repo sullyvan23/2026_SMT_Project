@@ -87,9 +87,8 @@ animate_model <- function() {
     ## Calculate type
     mutate(type = case_when(is.na(player_id)  ~  "ball",
                             (player_id%%1) == 0.5 ~  "computer_runner",
-                            (player_id+0.5) %in% animate_positions$player_id  ~  "actual_runner",
+                            between(player_id, 10, 13)  ~  "actual_runner",
                             player_id <= 9 ~ "defense",
-                            between(player_id, 10, 13) ~ "offense",
                             between(player_id, 14, 17) ~ "umpire",
                             player_id %in% c(18, 19) ~ "coach")) %>%
     ## Reorder and Rename Columns
@@ -154,9 +153,7 @@ animate_model <- function() {
                color = "white", size = 3, show.legend = F,
                family = "Press_Start_2P") +
     ## Specify colors for people
-    scale_fill_manual(values = c("offense" = "#005AB5",
-                                 "defense" = "#FEFE62",
-                                 "coach" = "#1A85FF",
+    scale_fill_manual(values = c("coach" = "#1A85FF",
                                  "umpire" = "black")) +
     ## Specify when to transition
     transition_time(frame_id) +
