@@ -4,8 +4,6 @@ new_animate_positions <- animate_positions %>% mutate(new_field_x = (field_x * c
                                                       field_x = new_field_x, field_y = new_field_y) %>%
                                                select(-c(new_field_x:new_field_y))
 
-ggplot(new_animate_positions %>% filter(timestamp == 4908998), aes(x = field_x, y = field_y)) + geom_point()
-
 new_animate_positions <- new_animate_positions %>% filter(between(field_x, -15.3, 105.3), between(field_y, 61, 115.9))
 
 
