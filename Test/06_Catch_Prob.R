@@ -20,13 +20,23 @@ catch_prob_data <- catch_prob_data %>% group_by(game_string, play_per_game, play
 
                               .x})
 
-hist(catch_prob_data$rmse_x, breaks = 100)
-hist(catch_prob_data$rmse_y, breaks = 100)
+# hist(catch_prob_data$rmse_x, breaks = 100)
+# hist(catch_prob_data$rmse_y, breaks = 100)
+
+catch_prob_data <- catch_prob_data %>% filter(rmse_x <= 0.2, rmse_y <= 0.3)
 
 
 catch_prob_data <- catch_prob_data %>% mutate(time_left_ground = ((timestamp_hit + (time_to_ground*1000)) - timestamp)/1000,
                                               time_left_8ft = ((timestamp_hit + (time_eight_ft*1000)) - timestamp)/1000,
-                                              OF_ground_x_dist = pred_x - ground_x,
+                                              time_since_hit = time_to_ground - time_left_ground) %>%
+                                       filter(time_left_ground >= 0)
+catch_prob_data <- catch_prob_data %>% mutate(eight_ft_x = ifelse(time_left_8ft <= 0,
+                                                                  ((eight_ft_x * time_left_ground) + (ground_x * -time_left_8ft)) / (time_left_ground - time_left_8ft),
+                                                                  eight_ft_x),
+                                              eight_ft_y = ifelse(time_left_8ft <= 0,
+                                                                  ((eight_ft_y * time_left_ground) + (ground_y * -time_left_8ft)) / (time_left_ground - time_left_8ft),
+                                                                  eight_ft_y))
+catch_prob_data <- catch_prob_data %>% mutate(OF_ground_x_dist = pred_x - ground_x,
                                               OF_ground_y_dist = pred_y - ground_y,
                                               OF_8ft_x_dist = pred_x - eight_ft_x,
                                               OF_8ft_y_dist = pred_y - eight_ft_y,
@@ -100,18 +110,6 @@ library(Metrics)
 catch_prob_data <- catch_prob_data %>% mutate(key = paste0(game_string, play_per_game, "_", player_id)) %>%
                                        relocate(key, .after = player_id)
 
-catch_prob_data <- catch_prob_data %>% filter(time_left_ground >= 0)
-
-catch_prob_data <- catch_prob_data %>% mutate(OF_8ft_dist = ifelse(time_left_8ft < 0,
-                                                                   ((OF_8ft_dist * time_left_ground) + (OF_ground_dist * -time_left_8ft)) / (time_left_ground - time_left_8ft),
-                                                                   OF_8ft_dist),
-                                              OF_8ft_velo = ifelse(time_left_8ft < 0,
-                                                                   ((OF_8ft_velo * time_left_ground) + (OF_ground_velo * -time_left_8ft)) / (time_left_ground - time_left_8ft),
-                                                                   OF_8ft_velo),
-                                              OF_8ft_angle = ifelse(time_left_8ft < 0,
-                                                                   ((OF_8ft_angle * time_left_ground) + (OF_ground_angle * -time_left_8ft)) / (time_left_ground - time_left_8ft),
-                                                                   OF_8ft_angle))
-
 set.seed(148)
 catch_prob_folds <- groupKFold(catch_prob_data$key, k = 2)
 
@@ -140,29 +138,87 @@ for(fold in catch_prob_folds) {
   print("-")
   train <- catch_prob_data[-fold, ]
   test <- catch_prob_data[fold, ]
-  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 5) + ti(time_left_ground, time_left_8ft, k = 5) +
-                               ti(OF_ground_dist, OF_8ft_dist, k = 3) + te(OF_ground_angle, OF_8ft_angle, k = 3) + te(OF_ground_velo, OF_8ft_velo, k = 3) + 
-                               te(OF_ground_velo_angle, OF_8ft_velo_angle, k = 3) + te(wall_ground_dist, wall_8ft_dist) + s(time_since_hit) + player_speed, 
+  model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground) + s(OF_ground_angle, k = 3) + OF_ground_velo + s(OF_ground_velo_angle, k = 3) + 
+                               te(wall_ground_dist, wall_8ft_dist) + ti(time_left_ground, OF_ground_angle) + s(time_since_hit) + player_speed, 
                family = binomial, data = train, discrete = TRUE)
   act <- c(act, test$player_caught)
   pred <- c(pred, predict(model, newdata = test, type = "response"))
 }
 logLoss(act, pred)
-### 0.1793288
+### 0.199862
+
+
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds) {
+  print("-")
+  train <- catch_prob_data[-fold, ]
+  test <- catch_prob_data[fold, ]
+  model <- bam(player_caught ~ te(OF_8ft_dist, time_left_8ft) + s(OF_8ft_angle, k = 3) + OF_8ft_velo + s(OF_8ft_velo_angle, k = 3) + 
+                               te(wall_ground_dist, wall_8ft_dist) + ti(time_left_8ft, OF_8ft_angle) + s(time_since_hit) + player_speed, 
+               family = binomial, data = train, discrete = TRUE)
+  act <- c(act, test$player_caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.1880228
 
 plot(model, page = 1)
 summary(model)
 
 ####################################################################################################################################################################
 
-catch_prob_model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground, k = 5) + te(OF_8ft_dist, time_left_8ft, k = 5) + ti(time_left_ground, time_left_8ft, k = 5) +
-                                         ti(OF_ground_dist, OF_8ft_dist, k = 3) + te(OF_ground_angle, OF_8ft_angle, k = 3) + te(OF_ground_velo, OF_8ft_velo, k = 3) + 
-                                         te(OF_ground_velo_angle, OF_8ft_velo_angle, k = 3) + te(wall_ground_dist, wall_8ft_dist) + s(time_since_hit) + player_speed, 
-                                        family = binomial, data = catch_prob_data,
-                                        discrete = TRUE)
+catch_ground_model <- bam(player_caught ~ te(OF_ground_dist, time_left_ground) + s(OF_ground_angle, k = 3) + OF_ground_velo + s(OF_ground_velo_angle, k = 3) + 
+                                           te(wall_ground_dist, wall_8ft_dist) + ti(time_left_ground, OF_ground_angle) + s(time_since_hit) + player_speed,
+                                            family = binomial, data = catch_prob_data,
+                                            discrete = TRUE)
+catch_8ft_model <- bam(player_caught ~ te(OF_8ft_dist, time_left_8ft) + s(OF_8ft_angle, k = 3) + OF_8ft_velo + s(OF_8ft_velo_angle, k = 3) + 
+                                       te(wall_ground_dist, wall_8ft_dist) + ti(time_left_8ft, OF_8ft_angle) + s(time_since_hit) + player_speed, 
+                                          family = binomial, data = catch_prob_data,
+                                          discrete = TRUE)
 
-catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_prob = predict(catch_prob_model, type = "response"),
-                                                            catch_odds = predict(catch_prob_model))
+catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_ground_odds = predict(catch_ground_model),
+                                                            catch_8ft_odds = predict(catch_8ft_model),
+                                                            catch_max_odds = pmax(catch_ground_odds, catch_8ft_odds),
+                                                            catch_min_odds = pmin(catch_ground_odds, catch_8ft_odds))
+
+####################################################################################################################################################################
+
+check <- catch_prob_data %>% mutate(catch_max_odds = round(catch_max_odds), catch_min_odds = round(catch_min_odds)) %>% 
+                             group_by(catch_max_odds, catch_min_odds) %>% summarise(catch_prob = mean(player_caught))
+
+ggplot(check %>% filter(catch_max_odds >= -5), aes(x = catch_max_odds, y = catch_min_odds, color = catch_prob)) + 
+       geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
+
+
+act <- c()
+pred <- c()
+for(fold in catch_prob_folds) {
+  print("-")
+  train <- catch_prob_data[-fold, ]
+  test <- catch_prob_data[fold, ]
+  model <- bam(player_caught ~ catch_max_odds + s(catch_min_odds, by = time_left_ground), 
+               family = binomial, data = train, discrete = TRUE)
+  act <- c(act, test$player_caught)
+  pred <- c(pred, predict(model, newdata = test, type = "response"))
+}
+logLoss(act, pred)
+### 0.1746564
+
+plot(model, page = 1)
+summary(model)
+
+####################################################################################################################################################################
+
+catch_prob_model <- gam(player_caught ~ catch_max_odds, family = binomial, data = catch_prob_data)
+
+catch_prob_data <- catch_prob_data %>% ungroup() %>% mutate(catch_odds = predict(catch_prob_model),
+                                                            catch_prob = predict(catch_prob_model, type = "response"))
+
+
+check <- catch_prob_data %>% filter(game_string == "y1_d186_RRM_VAS", play_per_game == 53)
+
+check <- catch_prob_data %>% group_by(game_string, play_per_game, player_id) %>% slice(n())
 
 write.csv(catch_prob_data, "catch_prob_data.csv", row.names = FALSE)
 
