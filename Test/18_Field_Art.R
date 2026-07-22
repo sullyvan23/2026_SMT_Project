@@ -43,17 +43,17 @@ from_first <- readPNG("from_first.png")
 first_base_line_plot <- function() {
   ggplot() + 
   annotation_raster(from_first,
-                    xmin = 74.7, xmax = 195.3,
+                    xmin = -105.3, xmax = 15.3,
                     ymin = 61, ymax = 115.9) +
   coord_fixed(
-    xlim = c(74.7, 195.3),
+    xlim = c(-105.3, 15.3),
     ylim = c(61, 115.9),
     expand = FALSE
   ) +
   theme_void()
 }
 
-first_base_line_plot() + geom_point(aes(x = 90, y = 90))
+first_base_line_plot() + geom_point(aes(x = 0, y = 90))
 
 
 
@@ -89,7 +89,7 @@ third_base_line_plot <- function() {
   theme_void()
 }
 
-third_base_line_plot() + geom_point(aes(x = 0, y = 0))
+third_base_line_plot() + geom_point(aes(x = -90, y = 0))
 
 ##################################################################################################################################################################################
 
