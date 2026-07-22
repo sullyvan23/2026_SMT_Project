@@ -43,6 +43,24 @@ from_first <- readPNG("from_first.png")
 first_base_line_plot <- function() {
   ggplot() + 
   annotation_raster(from_first,
+                    xmin = 74.7, xmax = 195.3,
+                    ymin = 61, ymax = 115.9) +
+  coord_fixed(
+    xlim = c(74.7, 195.3),
+    ylim = c(61, 115.9),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+first_base_line_plot() + geom_point(aes(x = 90, y = 90))
+
+
+
+from_second <- readPNG("from_second.png")
+second_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_second,
                     xmin = -15.3, xmax = 105.3,
                     ymin = 61, ymax = 115.9) +
   coord_fixed(
@@ -53,7 +71,25 @@ first_base_line_plot <- function() {
   theme_void()
 }
 
-first_base_line_plot() + geom_point(aes(x = 0, y = 90))
+second_base_line_plot() + geom_point(aes(x = 90, y = 90))
+
+
+
+from_third <- readPNG("from_third.png")
+third_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_third,
+                    xmin = -105.3, xmax = 15.3,
+                    ymin = -25.9, ymax = 29) +
+  coord_fixed(
+    xlim = c(-105.3, 15.3),
+    ylim = c(-25.9, 29),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+third_base_line_plot() + geom_point(aes(x = 0, y = 0))
 
 ##################################################################################################################################################################################
 
