@@ -28,7 +28,9 @@ plot(model, page = 1)
 summary(model)
 
 
-final_doubled_model <- gam(safe_back ~ og_basepath_dist + ground_og_dist + runner_basepath_velo + speed_95_throw, 
+doubled_up_final <- doubled_up_final %>% rename(back_basepath = og_basepath_dist, back_velo = runner_basepath_velo)
+
+final_doubled_model <- gam(safe_back ~ back_basepath + ground_og_dist + back_velo + speed_95_throw, 
                            family = binomial, data = doubled_up_final)
 summary(final_doubled_model)
 plot(final_doubled_model, page = 1)
