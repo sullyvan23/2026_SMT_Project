@@ -1,10 +1,18 @@
 
-new_animate_positions <- animate_positions %>% mutate(new_field_x = (field_x * cos(pi/4)) - (field_y * sin(pi/4)) + 90,
-                                                      new_field_y = (field_x * sin(pi/4)) + (field_y * cos(pi/4)),
+angle <- ifelse(model_play$player_id_br[1] == 12, -pi/4, pi/4)
+
+new_animate_positions <- animate_positions %>% mutate(new_field_x = (field_x * cos(angle)) - (field_y * sin(angle)),
+                                                      new_field_y = (field_x * sin(angle)) + (field_y * cos(angle)),
                                                       field_x = new_field_x, field_y = new_field_y) %>%
                                                select(-c(new_field_x:new_field_y))
 
-new_animate_positions <- new_animate_positions %>% filter(between(field_x, -15.3, 105.3), between(field_y, 61, 115.9))
+if(model_play$player_id_br[1] == 11) {
+  new_animate_positions <- new_animate_positions %>% filter(between(field_x, -105.3, 15.3), between(field_y, 61, 115.9))
+} else if(model_play$player_id_br[1] == 12) {
+  new_animate_positions <- new_animate_positions %>% filter(between(field_x, -15.3, 105.3), between(field_y, 61, 115.9))
+} else {
+  new_animate_positions <- new_animate_positions %>% filter(between(field_x, -105.3, 15.3), between(field_y, -25.9, 29))
+}
 
 
 animate_basepath()
@@ -79,7 +87,16 @@ animate_basepath <- function() {
                                                                      ((player_id + rand_num) %% 3) == 2  ~  "fielder_3.png"),
                                                            NA))
 
-  p <- first_base_line_plot() +
+  # Make Field and Plot Points
+  if(model_play$player_id_br[1] == 11) {
+     p <- first_base_line_plot()
+  } else if(model_play$player_id_br[1] == 12) {
+     p <- second_base_line_plot()
+  } else if(model_play$player_id_br[1] == 13) {
+     p <- third_base_line_plot()
+  }
+  
+  p <- p +
     ### plotting defenders
     geom_image(data = tracking_data %>% filter(type == "defense"),
               aes(x = field_x, y = field_y, image = image),
