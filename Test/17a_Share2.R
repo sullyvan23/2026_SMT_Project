@@ -164,7 +164,7 @@ add_advance_probs <- function(input_dataset) {
 
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d166_FNQ_PHD", play_per_game == 80) ### not caught easily, stealing before
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_per_game == 230) ### not caught easily
@@ -187,7 +187,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_p
 
 
 ### play used
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
@@ -371,6 +371,29 @@ mean(model_play$run_exp - test_play$run_exp)
 
 ### percent runs of model
 sum(test_play$run_exp) / sum(model_play$run_exp)
+
+##################################################################################################################################################################
+
+ellipse <- expand.grid(runner_basepath_velo = seq(-max_speed, max_speed, by = 0.01),
+                       runner_basepath_accel = seq(-max_accel, max_accel, by = 0.01)) %>%
+           mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
+                            (runner_basepath_accel^2 / max_accel^2)) %>%
+           filter(ellipse <= 1)
+plot(ellipse$runner_basepath_velo, ellipse$runner_basepath_accel, col = "black")
+points(test_play$runner_basepath_velo, test_play$runner_basepath_accel, col = "blue")
+points(model_play$runner_basepath_velo, model_play$runner_basepath_accel, col = "red")
+
+
+ellipse <- expand.grid(runner_basepath_velo = seq(-max_speed, max_speed, by = 0.01),
+                       runner_basepath_accel = seq(-max_accel, max_accel, by = 0.01),
+                       og_basepath_dist = seq(0, 0.25, by = 0.01)) %>%
+           mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
+                            (runner_basepath_accel^2 / max_accel^2) +
+                            ((og_basepath_dist-0.225)^2 / 0.2^2)) %>%
+           filter(ellipse <= 1)
+plot(ellipse$og_basepath_dist, ellipse$runner_basepath_velo, col = "black")
+points(test_play$og_basepath_dist, test_play$runner_basepath_velo, col = "blue")
+points(model_play$og_basepath_dist, model_play$runner_basepath_velo, col = "red")
 
 ##################################################################################################################################################################
 
