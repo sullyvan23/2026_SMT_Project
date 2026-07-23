@@ -52,10 +52,8 @@ go_back_function <- function(input_data) {
           if((input_data$runner_basepath_velo[i]^2 / max_speed^2) <= (input_data$runner_basepath_accel[i]^2 / max_accel^2)) {
             input_data$runner_basepath_accel[i] <- input_data$runner_basepath_accel[i] - (sign(input_data$runner_basepath_accel[i]) * 0.0005)
           } else {
-            input_data$runner_basepath_accel[i] <- input_data$runner_basepath_accel[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
+            input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
           }
-          input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i-1] + (input_data$runner_basepath_accel[i]*fps)
-          input_data$og_basepath_dist[i] <- input_data$og_basepath_dist[i-1] + (input_data$runner_basepath_velo[i]*fps)
           if(input_data$og_basepath_dist[i] <= 0.025) {
             input_data$runner_basepath_velo[i] <- 0
             input_data$og_basepath_dist[i] <- 0.025
@@ -163,7 +161,7 @@ add_advance_probs <- function(input_dataset) {
 #####################################################################################################################################################################################
 
 ### some plays I've looked at to potentially choose from
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
@@ -175,7 +173,7 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d178_AVV_ARN", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 95) ### 1st, rlly high catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d063_VKA_PHD", play_per_game == 166) ### 1st, up and down catch prob
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d202_PHD_VAS", play_per_game == 9)  ### 1st, doubled up, short fly
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_per_game == 79)  ### 3rd tag, prob goes a bit too far
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 22)  ### 2nd, catch prob drops
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d125_MEX_ANI", play_per_game == 228)  ### 1st, high catch prob short, drops
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 145) ### 2nd, go really far, high catch prob
@@ -183,9 +181,13 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d090_PHD_VAS", play_p
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210) ### 1st, runner go, model didn't do well
 
 
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d070_SQF_ARN", play_per_game == 76)  ### 1st drops, model goes further as should
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_per_game == 113)  ### 2nd, doubled up
+
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d169_MPC_PHD", play_per_game == 79)  ### 3rd tag, prob goes a bit too far
+
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
