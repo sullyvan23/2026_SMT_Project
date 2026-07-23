@@ -7,6 +7,8 @@ plays_share_data <- plays_share %>% mutate(runner_basepath_accel = ifelse(abs(ru
                                                                            runner_basepath_accel_2),
                                           back_basepath = NA,
                                           back_velo = NA,
+                                          forward_basepath = NA,
+                                          forward_velo = NA,
                                           ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                     (runner_basepath_accel^2 / max_accel^2) +
                                                     ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
@@ -14,7 +16,7 @@ plays_share_data <- plays_share %>% mutate(runner_basepath_accel = ifelse(abs(ru
                                                             0))
 
 group <- 0
-plays_share_data <- plays_share_data %>% group_by(game_string, play_per_game, player_id_br) %>%
+plays_share_data <- plays_share_data %>% group_by(game_string, play_per_game, player_code_runner) %>%
                    group_modify(~{group <<- group + 1
                                 message(group / sum(plays_num$count))
 
@@ -24,13 +26,17 @@ plays_share_data <- plays_share_data %>% group_by(game_string, play_per_game, pl
   
                                 for(j in 1:(nrow(.x)-1)) {
                                   back_results <- go_back_function(.x[j:nrow(.x),])
+                                  forward_results <- go_forward_function(.x[j:nrow(.x),])
                                   .x$back_basepath[j] <- back_results[[1]]
                                   .x$back_velo[j] <- back_results[[2]]
+                                  .x$forward_basepath[j] <- forward_results[[1]]
+                                  .x$forward_velo[j] <- forward_results[[2]]
                                   print(j/nrow(.x))
                                 }
                                 .x$back_basepath[nrow(.x)] <- .x$og_basepath_dist[nrow(.x)]
                                 .x$back_velo[nrow(.x)] <- .x$runner_basepath_velo[nrow(.x)]
-                                print(.x$back_velo[1])
+                                .x$forward_basepath[nrow(.x)] <- .x$og_basepath_dist[nrow(.x)]
+                                .x$forward_velo[nrow(.x)] <- .x$runner_basepath_velo[nrow(.x)]
 
                                 .x})
 
@@ -55,11 +61,14 @@ plays_share_data <- plays_share_data %>% mutate(doubled = doubled_up_prob * caug
 ### calculating max potential speeds and accelerations, and run expectancy every timestamp
 plays_share_data <- plays_share_data %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE))
 
+plays_share_data <- plays_share_data %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(group = cur_group_id())
+
+write.csv(plays_share_data, "plays_share_data.csv", row.names = FALSE)
+
 ##########################################################################################################################################################################################
 
-plays_share_data <- plays_share_data %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(group = cur_group_id())
 max(plays_share_data$group)
-### 469
+### 440
 
 
 ### modeled_play_data <- data.frame()
@@ -72,17 +81,15 @@ for(g in 1:max(plays_share_data$group)) {
     ### giving range of next possible acclerations
     accels <- seq(round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                         model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                           -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
-                                                                                                          model_play$runner_basepath_accel[i-1]/10),
+                                                           -(model_play$runner_basepath_velo[i-1]/10) - ((-0.2+model_play$og_basepath_dist[i-1])/10),
                                                            -(model_play$runner_basepath_velo[i-1]/80)) -
-                        (ifelse(model_play$runner_basepath_velo[i-1] > 0, 0.005, 0.004) * (fps/0.05)), 
+                        (ifelse(model_play$runner_basepath_velo[i-1] > 0, 0.0075, 0.005) * (fps/0.05)), 
                         3),
                   round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                         model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                           -(model_play$runner_basepath_velo[i-1]/10) + ((-0.2+model_play$og_basepath_dist[i-1]) * 
-                                                                                                          model_play$runner_basepath_accel[i-1]/10),
+                                                           -(model_play$runner_basepath_velo[i-1]/10) - ((-0.2+model_play$og_basepath_dist[i-1])/10),
                                                            -(model_play$runner_basepath_velo[i-1]/80)) +
-                        (ifelse(model_play$runner_basepath_velo[i-1] < 0, 0.005, 0.004) * (fps/0.05)), 
+                        (ifelse(model_play$runner_basepath_velo[i-1] < 0, 0.0075, 0.005) * (fps/0.05)), 
                         3),
                   by = 0.001)
   
@@ -95,42 +102,48 @@ for(g in 1:max(plays_share_data$group)) {
                                                   basepath = og_basepath_dist + player_id_br - 10,
                                                   runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
-                                                            (runner_basepath_accel^2 / max_accel^2) +
                                                             ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
-                                                                   (og_basepath_dist-0.225)^2 / 0.2^2,
-                                                                    0))
+                                                                   max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.225)^2 / 0.2^2) ),
+                                                                     (runner_basepath_accel^2 / max_accel^2) ))
   
     ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
     while(min(next_time_check$ellipse) > 1) {
-      next_time_check <- next_time_check %>% slice_min(ellipse) %>%
-                                             mutate(runner_basepath_velo = ifelse(og_basepath_dist == 0.025, 0, runner_basepath_velo))
+      next_time_check <- next_time_check %>% slice_min(ellipse)
+      
       ifelse((next_time_check$runner_basepath_velo[1]^2 / max_speed^2) <= (next_time_check$runner_basepath_accel[1]^2 / max_accel^2),
-             next_time_check <- next_time_check %>% mutate(runner_basepath_accel = runner_basepath_accel - (sign(runner_basepath_accel) * 0.001)),
-             next_time_check <- next_time_check %>% mutate(runner_basepath_velo = runner_basepath_velo - (sign(runner_basepath_velo) * 0.001)))
+             next_time_check <- next_time_check %>% mutate(runner_basepath_accel = runner_basepath_accel - (sign(runner_basepath_accel) * 0.0005)),
+             next_time_check <- next_time_check %>% mutate(runner_basepath_velo = runner_basepath_velo - (sign(runner_basepath_velo) * 0.0005)))
+  
+      next_time_check <- next_time_check %>% mutate(og_basepath_dist = model_play$og_basepath_dist[i-1] + (runner_basepath_velo*fps),
+                                                    og_basepath_dist = ifelse(og_basepath_dist < 0.025, 0.025, og_basepath_dist),
+                                                    runner_basepath_velo = ifelse(og_basepath_dist == 0.025, 0, runner_basepath_velo))
       
       next_time_check <- next_time_check %>% mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
-                                                              (runner_basepath_accel^2 / max_accel^2) +
                                                               ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
-                                                                    (og_basepath_dist-0.225)^2 / 0.2^2,
-                                                                     0))
+                                                                     max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.225)^2 / 0.2^2) ),
+                                                                       (runner_basepath_accel^2 / max_accel^2) ))
     }
   
     ### filtering for only possible motion
     next_time_check <- next_time_check %>% filter(ellipse <= 1) %>%
-                                           mutate(back_basepath = NA,
-                                                  back_velo = NA)
+                                           mutate(back_basepath = NA, back_velo = NA, forward_basepath = NA, forward_velo = NA)
   
     ### getting final possible positions if they decide to go back (for calcuating tag probability)
     if(i == nrow(test_play)) {
       next_time_check$back_basepath <- next_time_check$og_basepath_dist
       next_time_check$back_velo <- next_time_check$runner_basepath_velo
+      next_time_check$forward_basepath <- next_time_check$og_basepath_dist
+      next_time_check$forward_velo <- next_time_check$runner_basepath_velo
     } else {
       for(j in 1:nrow(next_time_check)) {
-        go_back_check <- bind_rows(next_time_check[j,],
-                                   test_play[(i+1):nrow(test_play),]) %>% select(og_basepath_dist, runner_basepath_velo, runner_basepath_accel, runner_basepath_accel_2, ellipse)
-        back_results <- go_back_function(go_back_check)
+        future_check <- bind_rows(next_time_check[j,],
+                        test_play[(i+1):nrow(test_play),]) %>% select(og_basepath_dist, runner_basepath_velo, runner_basepath_accel, runner_basepath_accel_2, player_id_br, ellipse)
+        back_results <- go_back_function(future_check)
+        forward_results <- go_forward_function(future_check)
         next_time_check$back_basepath[j] <- back_results[[1]]
         next_time_check$back_velo[j] <- back_results[[2]]
+        next_time_check$forward_basepath[j] <- forward_results[[1]]
+        next_time_check$forward_velo[j] <- forward_results[[2]]
       }
     }
   
@@ -148,11 +161,13 @@ for(g in 1:max(plays_share_data$group)) {
   
     ### calculating run expectancy and sorting by it
     next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
-                                                  jerk_now = row_number() / nrow(next_time_check)) %>%
-                                          arrange(desc(run_exp))
+                                                  jerk_now = row_number() / nrow(next_time_check)) %>% 
+                                           arrange(desc(run_exp))
+  
   
     ### taking best one and using
     model_play <- bind_rows(model_play, next_time_check[1,])
+    
     print( g - 1 + (i/nrow(test_play)) )
   }
 
@@ -164,7 +179,7 @@ save.image("new.Rdata")
 
 ##########################################################################################################################################################################################
 
-play_vs_model_data <- plays_share_data[,c(1:5,49)] %>% left_join(modeled_play_data[,c(1:4,49)],
+play_vs_model_data <- plays_share_data[,c(1:5,52)] %>% left_join(modeled_play_data[,c(1:2,4:5,52)],
                                                                  by = c("game_string", "play_per_game", "player_id_br", "timestamp"),
                                                                  suffix = c("_play", "_model"))
 
