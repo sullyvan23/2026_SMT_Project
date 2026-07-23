@@ -164,7 +164,7 @@ add_advance_probs <- function(input_dataset) {
 
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d061_VKA_PHD", play_per_game == 91) ### 1st, succ tag, 60% caught most of time
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d211_QHX_ANI", play_per_game == 40) ### tag, decently high caught prob whole time
-
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d199_TES_ARN", play_per_game == 197) ### 2nd, tag
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d166_FNQ_PHD", play_per_game == 80) ### not caught easily, stealing before
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d120_MKS_ARN", play_per_game == 230) ### not caught easily
@@ -183,11 +183,11 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_p
 
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d070_SQF_ARN", play_per_game == 76)  ### 1st drops, model goes further as should
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_per_game == 113)  ### 2nd, doubled up
+
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d073_XPO_PHD", play_per_game == 379) ### 3rd, easy tag
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_per_game == 113)  ### 2nd, doubled up
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
