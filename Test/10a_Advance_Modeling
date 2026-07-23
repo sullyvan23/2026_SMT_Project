@@ -147,7 +147,7 @@ for(fold in b1_folds) {
   print("-")
   train <- baserunner_1st_final[-fold, ]
   test <- baserunner_1st_final[fold, ]
-  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5),
+  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + ti(og_basepath_dist, ground_next_dist, k = 3),
                family = ocat(R = 4), data = train)
   act <- c(act, test$succ_bases_advanced) 
   pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
@@ -158,7 +158,7 @@ for(i in 1:length(act)) {
 }
 act <- act/act
 logLoss(act, pred)
-### 0.8020561
+### 0.7874714
 
 summary(model)
 plot(model, pages = 1)
@@ -170,7 +170,7 @@ for(fold in b2_folds) {
   print("-")
   train <- baserunner_2nd_final[-fold, ]
   test <- baserunner_2nd_final[fold, ]
-  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5) + s(OF_ground_next2_angle, k = 3),
+  model <- gam(succ_bases_advanced ~ og_basepath_dist + runner_basepath_velo + te(ground_x, ground_y, k = 5),
                family = ocat(R = 3), data = train)
   act <- c(act, test$succ_bases_advanced) 
   pred_hold <- rbind(pred_hold, as.matrix(predict(model, newdata = test, type = "response")))
@@ -181,7 +181,7 @@ for(i in 1:length(act)) {
 }
 act <- act/act
 logLoss(act, pred)
-### 0.3597488
+### 0.4129648
 
 
 baserunner_1st_final <- baserunner_1st_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
@@ -189,7 +189,7 @@ baserunner_2nd_final <- baserunner_2nd_final %>% mutate(forward_basepath = og_ba
 advance_one_final <- advance_one_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
 
 
-advance_first_model <- gam(succ_bases_advanced ~ forward_basepath + forward_velo + te(ground_x, ground_y, k = 5) + 
+advance_first_model <- gam(succ_bases_advanced ~ forward_basepath + forward_velo + te(ground_x, ground_y, k = 5) + ti(og_basepath_dist, ground_next_dist, k = 3) + 
                                                  speed_95_runner,
                            family = ocat(R = 4), data = baserunner_1st_final)
 
