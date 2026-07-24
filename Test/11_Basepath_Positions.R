@@ -46,19 +46,10 @@ RMSE(act, pred)
 plot(model, page = 1)
 
 
-basepath_deviation_11 <- basepath_deviation %>% filter(player_id_br == 11)
-basepath_deviation_12 <- basepath_deviation %>% filter(player_id_br == 12)
-basepath_deviation_13 <- basepath_deviation %>% filter(player_id_br == 13) 
+basepath_x_model <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation)
+basepath_y_model <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation)
 
-
-basepath_x_model_11 <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation_11)
-basepath_y_model_11 <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation_11)
-basepath_x_model_12 <- gam(field_x ~ s(basepath, k = 10), data = basepath_deviation_12)
-basepath_y_model_12 <- gam(field_y ~ s(basepath, k = 10), data = basepath_deviation_12)
-basepath_x_model_13 <- gam(field_x ~ s(basepath, k = 3), data = basepath_deviation_13)
-basepath_y_model_13 <- gam(field_y ~ s(basepath, k = 3), data = basepath_deviation_13)
-
-plot(basepath_x_model_11, page = 1)
+plot(basepath_x_model, page = 1)
 
 
 basepath_pred_positions <- expand.grid(basepath = seq(1, 4, by = 0.01),
