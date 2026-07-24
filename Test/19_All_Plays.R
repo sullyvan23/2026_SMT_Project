@@ -202,8 +202,27 @@ plays_leaderboard <- plays_leaderboard %>% group_by(player_code_runner) %>%
                                                      count = n())
 plays_leaderboard <- plays_leaderboard %>% filter(count >= 5)
 
+plays_leaderboard <- plays_leaderboard %>% mutate(grade = case_when(avg_percent >= 1  ~  "A+",
+                                                                    avg_percent >= 0.998  ~  "A",
+                                                                    avg_percent >= 0.996  ~  "A-",
+                                                                    avg_percent >= 0.994  ~  "B+",
+                                                                    avg_percent >= 0.992  ~  "B",
+                                                                    avg_percent >= 0.99  ~  "B-",
+                                                                    avg_percent >= 0.988  ~  "C+",
+                                                                    avg_percent >= 0.986  ~  "C",
+                                                                    avg_percent >= 0.984  ~  "C-",
+                                                                    avg_percent >= 0.982  ~  "D+",
+                                                                    avg_percent >= 0.98  ~  "D",
+                                                                    avg_percent >= 0.978  ~  "D-",
+                                                                    TRUE  ~  "F"))
+plays_leaderboard <- plays_leaderboard %>% select(-avg_exp_runs_lost) %>% arrange(desc(avg_percent))
 
-hist(plays_leaderboard$avg_percent, breaks = 5)
+
+write.csv(plays_leaderboard, "plays_leaderboard.csv", row.names = FALSE)
+
+hist(plays_leaderboard$avg_percent, breaks = 13)
 hist(plays_leaderboard$avg_exp_runs_lost, breaks = 5)
+
+
 
 
