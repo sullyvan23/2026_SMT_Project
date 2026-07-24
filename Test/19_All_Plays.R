@@ -187,11 +187,23 @@ play_vs_model_summarise <- play_vs_model_data %>% group_by(game_string, play_per
                                                   summarise(run_exp_play = mean(run_exp_play),
                                                             run_exp_model = mean(run_exp_model),
                                                             basepath_diff = last(basepath_play) - last(basepath_model)) %>%
-                                                  mutate(percent = run_exp_play / run_exp_model)
+                                                  mutate(percent = run_exp_play / run_exp_model,
+                                                         exp_runs_lost = run_exp_model - run_exp_play)
 
 
 hist(play_vs_model_summarise$percent, breaks = 50)
 
 
+
+plays_leaderboard <- play_vs_model_summarise %>% filter(percent > 0.9, basepath_diff < 0.5)
+plays_leaderboard <- plays_leaderboard %>% group_by(player_code_runner) %>%
+                                           summarise(avg_percent = mean(percent),
+                                                     avg_exp_runs_lost = mean(exp_runs_lost),
+                                                     count = n())
+plays_leaderboard <- plays_leaderboard %>% filter(count >= 5)
+
+
+hist(plays_leaderboard$avg_percent, breaks = 5)
+hist(plays_leaderboard$avg_exp_runs_lost, breaks = 5)
 
 
