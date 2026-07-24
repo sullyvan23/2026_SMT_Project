@@ -174,7 +174,7 @@ animate_model <- function() {
   number_of_frames <-  max(tracking_data$frame_id)
   
   # Animate
-  p2 <- animate(p, fps = fps, nframes = number_of_frames)
+  p2 <- animate(p, fps = fps/2, nframes = number_of_frames)
   
   return(p2)
 }
