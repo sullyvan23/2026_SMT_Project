@@ -186,7 +186,7 @@ play_vs_model_data <- plays_share_data[,c(1:5,10,52)] %>% left_join(modeled_play
 play_vs_model_summarise <- play_vs_model_data %>% group_by(game_string, play_per_game, player_id_br, player_code_runner) %>%
                                                   summarise(run_exp_play = mean(run_exp_play),
                                                             run_exp_model = mean(run_exp_model),
-                                                            basepath_diff = last(basepath_play) - last(basepath_model)) %>%
+                                                            avg_basepath_diff = mean(basepath_play) - mean(basepath_model)) %>%
                                                   mutate(percent = run_exp_play / run_exp_model,
                                                          exp_runs_lost = run_exp_model - run_exp_play)
 
