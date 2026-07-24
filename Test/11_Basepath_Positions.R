@@ -27,7 +27,7 @@ for(fold in basepath_folds) {
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 1.368656
+### 1.364287
 
 act <- c()
 pred <- c()
@@ -41,18 +41,28 @@ for(fold in basepath_folds) {
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
-### 1.54729
+### 1.545511
 
 plot(model, page = 1)
 
 
-basepath_x_model <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation)
-basepath_y_model <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation)
+basepath_deviation_11 <- basepath_deviation %>% filter(player_id_br == 11)
+basepath_deviation_12 <- basepath_deviation %>% filter(player_id_br == 12)
+basepath_deviation_13 <- basepath_deviation %>% filter(player_id_br == 13) 
 
-plot(basepath_x_model, page = 1)
+
+basepath_x_model_11 <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation_11)
+basepath_y_model_11 <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation_11)
+basepath_x_model_12 <- gam(field_x ~ s(basepath, k = 10), data = basepath_deviation_12)
+basepath_y_model_12 <- gam(field_y ~ s(basepath, k = 10), data = basepath_deviation_12)
+basepath_x_model_13 <- gam(field_x ~ s(basepath, k = 3), data = basepath_deviation_13)
+basepath_y_model_13 <- gam(field_y ~ s(basepath, k = 3), data = basepath_deviation_13)
+
+plot(basepath_x_model_11, page = 1)
 
 
-basepath_pred_positions <- expand.grid(basepath = seq(1, 4, by = 0.01))
+basepath_pred_positions <- expand.grid(basepath = seq(1, 4, by = 0.01),
+                                       player_id_br = seq(11, 13, by = 1))
 basepath_pred_positions <- basepath_pred_positions %>% mutate(field_x = predict(basepath_x_model, newdata = basepath_pred_positions),
                                                               field_y = predict(basepath_y_model, newdata = basepath_pred_positions))
 
