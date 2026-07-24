@@ -189,7 +189,7 @@ go_back_final <- function(input_data) {
                                                   input_data$ellipse[i-1]^1 * ifelse(input_data$og_basepath_dist[i-1] <= 0.2  &  input_data$runner_basepath_velo[i-1] <= 0,
                                                                                      -(input_data$runner_basepath_velo[i-1]/20) - ((-0.2+input_data$og_basepath_dist[i-1])/20),
                                                                                      -(input_data$runner_basepath_velo[i-1]/80)) -
-                                                  (ifelse(input_data$runner_basepath_velo[i-1] > 0, 0.0065, 0.004) * (fps/0.05)), 
+                                                  (ifelse(input_data$runner_basepath_velo[i-1] > 0, 0.0075, 0.005) * (fps/0.05)), 
                                                   3)
 
     input_data$runner_basepath_accel[i] <- ifelse(input_data$og_basepath_dist[i-1] == 0, 0, input_data$runner_basepath_accel[i])
