@@ -13,10 +13,17 @@ if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
 
 
 
-animate_positions <- modeled_play_data %>% filter(game_string == "y1_d163_FNQ_PHD", play_per_game == 210, player_id_br == 11) %>%
-                                           select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
-### OR
-animate_positions <- model_play %>% select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
+after_model <- bind_rows(model_play[nrow(model_play),],
+                         player_positions %>% filter(game_string == animate_positions$game_string[1],
+                                                     play_per_game == animate_positions$play_per_game[1],
+                                                     player_id == animate_positions$player_id[1],
+                                                     timestamp > max(animate_positions$timestamp)) )
+after_model <- go_back_final(after_model)
+after_model <- after_model %>% mutate(player_id_br = first(player_id_br),
+                                      basepath = og_basepath_dist + player_id_br - 10)
+
+animate_positions <- bind_rows(model_play, after_model[2:nrow(after_model),]) %>% 
+                     select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 
 
 animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
@@ -172,3 +179,128 @@ animate_model <- function() {
   return(p2)
 }
 ###########################################################################################################################################################################################
+
+
+############################################
+go_back_final <- function(input_data) {
+  for(i in 2:nrow(input_data)) {
+    ### close to minimum possible next acceleration
+    input_data$runner_basepath_accel[i] <- round(input_data$runner_basepath_accel[i-1] + ((1-input_data$ellipse[i-1]^1) * (input_data$runner_basepath_accel[i-1] - input_data$runner_basepath_accel_2[i-1])) +
+                                                  input_data$ellipse[i-1]^1 * ifelse(input_data$og_basepath_dist[i-1] <= 0.2  &  input_data$runner_basepath_velo[i-1] <= 0,
+                                                                                     -(input_data$runner_basepath_velo[i-1]/20) - ((-0.2+input_data$og_basepath_dist[i-1])/20),
+                                                                                     -(input_data$runner_basepath_velo[i-1]/80)) -
+                                                  (ifelse(input_data$runner_basepath_velo[i-1] > 0, 0.0065, 0.004) * (fps/0.05)), 
+                                                  3)
+
+    input_data$runner_basepath_accel[i] <- ifelse(input_data$og_basepath_dist[i-1] == 0, 0, input_data$runner_basepath_accel[i])
+
+    ### having velocity and position match acceleration
+    input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i-1] + (input_data$runner_basepath_accel[i]*fps)
+    input_data$og_basepath_dist[i] <- input_data$og_basepath_dist[i-1] + (input_data$runner_basepath_velo[i]*fps)
+    if(input_data$og_basepath_dist[i] <= 0) {
+      input_data$runner_basepath_velo[i] <- 0
+      input_data$og_basepath_dist[i] <- 0
+    }
+    input_data$runner_basepath_accel_2[i] <- input_data$runner_basepath_accel[i-1]
+    input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
+                             ifelse(input_data$og_basepath_dist[i] <= 0.1  &  input_data$runner_basepath_velo[i] <= 0,
+                                      max( ((input_data$og_basepath_dist[i]-0.1)^2 / 0.1^2), (input_data$runner_basepath_accel[i]^2 / max_accel^2) ),
+                                            (input_data$runner_basepath_accel[i]^2 / max_accel^2))
+
+    ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
+    while(input_data$ellipse[i] > 1) {
+        if(input_data$og_basepath_dist[i] <= 0.1  &  input_data$runner_basepath_velo[i] < 0) {
+          input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
+          if(input_data$og_basepath_dist[i] <= 0) {
+            input_data$runner_basepath_velo[i] <- 0
+            input_data$og_basepath_dist[i] <- 0
+          }
+        
+        } else {
+          if((input_data$runner_basepath_velo[i]^2 / max_speed^2) <= (input_data$runner_basepath_accel[i]^2 / max_accel^2)) {
+            input_data$runner_basepath_accel[i] <- input_data$runner_basepath_accel[i] - (sign(input_data$runner_basepath_accel[i]) * 0.0005)
+          } else {
+            input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
+          }
+          if(input_data$og_basepath_dist[i] <= 0) {
+            input_data$runner_basepath_velo[i] <- 0
+            input_data$og_basepath_dist[i] <- 0
+          }  
+        
+      }
+      
+      input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
+                               ifelse(input_data$og_basepath_dist[i] <= 0.1  &  input_data$runner_basepath_velo[i] <= 0,
+                                        max( ((input_data$og_basepath_dist[i]-0.1)^2 / 0.1^2), (input_data$runner_basepath_accel[i]^2 / max_accel^2) ),
+                                              (input_data$runner_basepath_accel[i]^2 / max_accel^2))
+    }
+    
+  }
+
+  ### returning final
+  return(input_data)
+}
+
+
+
+############################################
+go_forward_final <- function(input_data) {
+  for(i in 2:nrow(input_data)) {
+    ### close to minimum possible next acceleration
+    input_data$runner_basepath_accel[i] <- round(input_data$runner_basepath_accel[i-1] + ((1-input_data$ellipse[i-1]^1) * (input_data$runner_basepath_accel[i-1] - input_data$runner_basepath_accel_2[i-1])) +
+                                                  input_data$ellipse[i-1]^1 * ifelse(input_data$og_basepath_dist[i-1] <= 0.2  &  input_data$runner_basepath_velo[i-1] <= 0,
+                                                                                     -(input_data$runner_basepath_velo[i-1]/20) - ((-0.2+input_data$og_basepath_dist[i-1])/20),
+                                                                                     -(input_data$runner_basepath_velo[i-1]/80)) +
+                                                  (ifelse(input_data$runner_basepath_velo[i-1] > 0, 0.0075, 0.005) * (fps/0.05)), 
+                                                  3)
+
+    ### having velocity and position match acceleration
+    input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i-1] + (input_data$runner_basepath_accel[i]*fps)
+    input_data$og_basepath_dist[i] <- input_data$og_basepath_dist[i-1] + (input_data$runner_basepath_velo[i]*fps)
+    input_data$runner_basepath_accel_2[i] <- input_data$runner_basepath_accel[i-1]
+    input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
+                                 ifelse(input_data$og_basepath_dist[i] <= 0.2  &  input_data$runner_basepath_velo[i] <= 0,
+                                          max( ((input_data$og_basepath_dist[i]-0.224)^2 / 0.2^2), (input_data$runner_basepath_accel[i]^2 / max_accel^2) ),
+                                                (input_data$runner_basepath_accel[i]^2 / max_accel^2))
+
+    ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
+    if(input_data$og_basepath_dist[i] >= (-input_data$player_id_br[i] + 14)) {
+      input_data$og_basepath_dist[i] <- (-input_data$player_id_br[i] + 14)
+      input_data$runner_basepath_velo[i] <- 0
+    } else {
+      while(input_data$ellipse[i] > 1) {
+        if(input_data$og_basepath_dist[i] <= 0.2  &  input_data$runner_basepath_velo[i] < 0) {
+          input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
+          if(input_data$og_basepath_dist[i] <= 0.025) {
+            input_data$runner_basepath_velo[i] <- 0
+            input_data$og_basepath_dist[i] <- 0.025
+          }
+        
+        } else {
+          if((input_data$runner_basepath_velo[i]^2 / max_speed^2) <= (input_data$runner_basepath_accel[i]^2 / max_accel^2)) {
+            input_data$runner_basepath_accel[i] <- input_data$runner_basepath_accel[i] - (sign(input_data$runner_basepath_accel[i]) * 0.0005)
+          } else {
+            input_data$runner_basepath_accel[i] <- input_data$runner_basepath_accel[i] - (sign(input_data$runner_basepath_velo[i]) * 0.0005)
+          }
+          input_data$runner_basepath_velo[i] <- input_data$runner_basepath_velo[i-1] + (input_data$runner_basepath_accel[i]*fps)
+          input_data$og_basepath_dist[i] <- input_data$og_basepath_dist[i-1] + (input_data$runner_basepath_velo[i]*fps)
+          if(input_data$og_basepath_dist[i] <= 0.025) {
+            input_data$runner_basepath_velo[i] <- 0
+            input_data$og_basepath_dist[i] <- 0.025
+          }  
+        
+        }  
+      
+        input_data$ellipse[i] <- (input_data$runner_basepath_velo[i]^2 / max_speed^2) +
+                                 ifelse(input_data$og_basepath_dist[i] <= 0.2  &  input_data$runner_basepath_velo[i] <= 0,
+                                          max( ((input_data$og_basepath_dist[i]-0.224)^2 / 0.2^2), (input_data$runner_basepath_accel[i]^2 / max_accel^2) ),
+                                                (input_data$runner_basepath_accel[i]^2 / max_accel^2))
+      }
+    }
+    
+  }
+
+  ### returning final
+  return(input_data)
+}
+
