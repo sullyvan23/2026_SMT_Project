@@ -1,19 +1,19 @@
-basepath_deviation <- advance_one_data_sum %>% select(game_string:player_id_br, timestamp, pred_x_runner:pred_y_runner, rmse_x:rmse_y, basepath, speed_95_runner)
-basepath_deviation <- bind_rows(basepath_deviation, tag_up_data_sum %>% select(game_string:player_id_br, timestamp, pred_x_runner:pred_y_runner, rmse_x:rmse_y, basepath, speed_95_runner))
-basepath_deviation <- bind_rows(basepath_deviation, doubled_up_data_sum %>% select(game_string:player_id_br, timestamp, pred_x_runner:pred_y_runner, rmse_x:rmse_y, basepath, speed_95_runner))
+basepath_deviation <- advance_one_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner)
+basepath_deviation <- bind_rows(basepath_deviation, tag_up_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner))
+basepath_deviation <- bind_rows(basepath_deviation, doubled_up_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner))
 basepath_deviation <- basepath_deviation %>% filter(basepath < 4)
 basepath_deviation <- basepath_deviation %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>% slice(1)
 
-ggplot(basepath_deviation, aes(x = pred_x_runner, y = pred_y_runner, color = basepath)) + 
+ggplot(basepath_deviation, aes(x = field_x, y = field_y, color = basepath)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 2.5)
 
-plot(basepath_deviation$basepath, basepath_deviation$pred_x_runner)
-plot(basepath_deviation$basepath, basepath_deviation$pred_y_runner)
+plot(basepath_deviation$basepath, basepath_deviation$field_x)
+plot(basepath_deviation$basepath, basepath_deviation$field_y)
 
 ####################################################################################################################################################################################
 
 set.seed(377)
-basepath_folds <- groupKFold(basepath_deviation$basepath, k = 5)
+basepath_folds <- groupKFold(basepath_deviation$basepath, k = 2)
 
 act <- c()
 pred <- c()
@@ -21,12 +21,13 @@ for(fold in basepath_folds) {
   print("-")
   train <- basepath_deviation[-fold, ]
   test <- basepath_deviation[fold, ]
-  model <- gam(pred_x_runner ~ s(basepath, k = 50), 
+  model <- gam(field_x ~ s(basepath, k = 20), 
                data = train)
-  act <- c(act, test$pred_x_runner) 
+  act <- c(act, test$field_x) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
+### 1.368656
 
 act <- c()
 pred <- c()
@@ -34,18 +35,21 @@ for(fold in basepath_folds) {
   print("-")
   train <- basepath_deviation[-fold, ]
   test <- basepath_deviation[fold, ]
-  model <- gam(pred_y_runner ~ s(basepath, k = 50), 
+  model <- gam(field_y ~ s(basepath, k = 20), 
                data = train)
-  act <- c(act, test$pred_y_runner) 
+  act <- c(act, test$field_y) 
   pred <- c(pred, predict(model, newdata = test))
 }
 RMSE(act, pred)
+### 1.54729
 
 plot(model, page = 1)
 
 
-basepath_x_model <- gam(pred_x_runner ~ s(basepath, k = 50), data = basepath_deviation)
-basepath_y_model <- gam(pred_y_runner ~ s(basepath, k = 50), data = basepath_deviation)
+basepath_x_model <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation)
+basepath_y_model <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation)
+
+plot(basepath_x_model, page = 1)
 
 
 basepath_pred_positions <- expand.grid(basepath = seq(1, 4, by = 0.01))
