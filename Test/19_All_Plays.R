@@ -187,7 +187,8 @@ play_vs_model_summarise <- play_vs_model_data %>% group_by(game_string, play_per
                                                   summarise(run_exp_play = mean(run_exp_play),
                                                             run_exp_model = mean(run_exp_model),
                                                             avg_basepath_diff = mean(basepath_play) - mean(basepath_model),
-                                                            avg_caught_prob = mean(caught_prob)) %>%
+                                                            avg_caught_prob = mean(caught_prob),
+                                                            last_caught_prob = last(caught_prob)) %>%
                                                   mutate(percent = run_exp_play / run_exp_model,
                                                          exp_runs_lost = run_exp_model - run_exp_play)
 
