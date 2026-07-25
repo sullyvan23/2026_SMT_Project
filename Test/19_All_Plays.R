@@ -196,6 +196,8 @@ play_vs_model_summarise <- play_vs_model_data %>% group_by(game_string, play_per
 hist(play_vs_model_summarise$percent, breaks = 50)
 
 
+check <- play_vs_model_summarise %>% left_join(advance_data[,c(1:3,7)], by = c("game_string", "play_per_game", "player_id_br")) %>% slice(1)
+
 
 plays_leaderboard <- play_vs_model_summarise %>% filter(percent > 0.9, basepath_diff < 0.5)
 plays_leaderboard <- plays_leaderboard %>% group_by(player_code_runner) %>%
