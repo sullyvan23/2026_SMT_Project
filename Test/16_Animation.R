@@ -2,6 +2,7 @@
 if(!require("showtext")) {install.packages("showtext")}; library(showtext)
 library(showtext)
 font_add_google("Press Start 2P", "Press_Start_2P")
+font_add_google("Oswald", "Oswald")
 showtext_auto()
 
 library(ggimage)
@@ -156,9 +157,9 @@ animate_model <- function() {
     ## show catch probability
     geom_text(data = tracking_data %>% filter(caught_prob != ""),
                aes(x = -150, y = 10,
-                   label = paste0("Catch Prob: ", caught_prob)),
-               color = "white", size = 3, show.legend = F,
-               family = "Press_Start_2P") +
+                   label = paste("Catch Prob:", caught_prob)),
+               color = "white", size = 5, show.legend = F,
+               family = "Oswald", fontface = "bold") +
     ## Specify colors for people
     scale_fill_manual(values = c("coach" = "#1A85FF",
                                  "umpire" = "black")) +
@@ -168,7 +169,7 @@ animate_model <- function() {
     annotate("text", x = c(150, 0), y = c(10, 430), color = "white",
              label = c(paste("Play:", animate_positions$play_per_game[1]), 
                        paste("Game :", animate_positions$game_string[1])),
-             family = "Press_Start_2P")
+             family = "Oswald", fontface = "bold", size = 5)
   
   # Find the number of frames
   number_of_frames <-  max(tracking_data$frame_id)
