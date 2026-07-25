@@ -109,6 +109,14 @@ animate_basepath <- function() {
     geom_image(data = tracking_data %>% filter(type == "computer_runner"),
                aes(x = field_x, y = field_y, image = "computer_runner.png"),
                size = 0.15, alpha = 0.8) +
+    ## Specify colors for people
+    scale_fill_manual(values = c("coach" = "#1A85FF",
+                                 "umpire" = "black")) +
+    ## Specify when to transition
+    transition_time(frame_id)
+
+  if(sum(tracking_data$type == "ball") > 0) {
+    p + 
     ## Plot the ball
     geom_point(data = tracking_data %>%
                  filter(type == "ball"),
@@ -116,12 +124,8 @@ animate_basepath <- function() {
                    size = field_z),
                fill = "white",
                shape = 21,
-               show.legend = F) +
-    ## Specify colors for people
-    scale_fill_manual(values = c("coach" = "#1A85FF",
-                                 "umpire" = "black")) +
-    ## Specify when to transition
-    transition_time(frame_id)
+               show.legend = F)
+  }
   
   # Find the number of frames
   number_of_frames <-  max(tracking_data$frame_id)
