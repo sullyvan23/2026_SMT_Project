@@ -14,10 +14,10 @@ if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
 
 
 after_model <- bind_rows(model_play[nrow(model_play),],
-                         player_positions %>% filter(game_string == animate_positions$game_string[1],
-                                                     play_per_game == animate_positions$play_per_game[1],
-                                                     player_id == animate_positions$player_id[1],
-                                                     timestamp > max(animate_positions$timestamp)) )
+                         player_positions %>% filter(game_string == model_play$game_string[1],
+                                                     play_per_game == model_play$play_per_game[1],
+                                                     player_id == model_play$player_id[1],
+                                                     timestamp > max(model_play$timestamp)) )
 after_model <- go_back_final(after_model)
 after_model <- after_model %>% mutate(player_id_br = first(player_id_br),
                                       basepath = og_basepath_dist + player_id_br - 10)
