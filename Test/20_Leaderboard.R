@@ -50,7 +50,7 @@ leaderboard_function <- function(player_code_runner_input = "PHD-8619",
     
     
     # Add scoreboard title and subtitle
-    tab_header(title = md("♠️ **THE ADVANTAGE TABLE** ♣️"),
+    tab_header(title = md("❤️️ **THE ADVANTAGE TABLE**♦️"),
                subtitle = md("Baserunning leaderboard powered by expected value modeling")) %>%
     
     
