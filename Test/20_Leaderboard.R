@@ -30,8 +30,8 @@ leaderboard_function <- function(player_code_runner_input = "PHD-8619",
   
   # Pull players within specified range above and below selected player
   temp <- leaderboard_df %>%
-    filter(Rank >= player_rank - below_number,
-           Rank <= player_rank + above_number)%>%
+    filter(Rank >= player_rank - above_number,
+           Rank <= player_rank + below_number)%>%
     
     # Format decision score to exactly two decimal places
     mutate(Decision_Score = sprintf("%.2f", avg_percent * 100)) %>%
