@@ -55,12 +55,12 @@ leaderboard_function <- function(player_code_runner_input = "PHD-8619",
     
     
     # Title font
-    tab_style(style = cell_text(font = google_font("Limelight"), size = px(30), weight = "bold", color = "white"),
+    tab_style(style = cell_text(font = google_font("Oswald Bold"), size = px(30), weight = "bold", color = "white"),
               locations = cells_title(groups = "title")) %>%
     
     
     # Subtitle font
-    tab_style(style = cell_text(font = google_font("Limelight"),size = px(16), color = "white"), 
+    tab_style(style = cell_text(font = google_font("Oswald Bold"),size = px(16), color = "white"), 
               locations = cells_title(groups = "subtitle")) %>%
     
     
@@ -77,7 +77,7 @@ leaderboard_function <- function(player_code_runner_input = "PHD-8619",
     # Column header styling
     tab_style(style = list(cell_fill(color = "black"),
                            cell_text(color = "white",weight = "bold",
-                                     font = google_font("Limelight"),
+                                     font = google_font("Oswald Bold"),
                                      size = px(18))),locations = cells_column_labels()) %>%
     
     
