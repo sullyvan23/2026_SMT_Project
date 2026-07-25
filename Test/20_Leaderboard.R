@@ -3,7 +3,6 @@ library(tidyverse)
 library(gt)
 
 leaderboard_function <- function(player_code_runner_input = "PHD-8619",
-                                 above_below_number = 5,
                                  leaderboard_df = leaderboard) {
   
   
@@ -16,12 +15,23 @@ leaderboard_function <- function(player_code_runner_input = "PHD-8619",
   player_rank <- leaderboard_df %>%
     filter(player_code_runner == player_code_runner_input) %>%
     pull(Rank)
+
+  if(player_rank <= 5) {
+    above_number <- player_rank - 1
+    below_number <- 10 - above_number
+  } else if(player_rank >= (max(leaderboard_df$Rank)-4)) {
+    below_number <- max(leaderboard_df$Rank) - player_rank
+    above_number <- 10 - below_number
+  } else {
+    above_number <- 5
+    below_number <- 5
+  }
   
   
   # Pull players within specified range above and below selected player
   temp <- leaderboard_df %>%
-    filter(Rank >= player_rank - above_below_number,
-           Rank <= player_rank + above_below_number)%>%
+    filter(Rank >= player_rank - below_number,
+           Rank <= player_rank + above_number)%>%
     
     # Format decision score to exactly two decimal places
     mutate(Decision_Score = sprintf("%.2f", avg_percent * 100)) %>%
