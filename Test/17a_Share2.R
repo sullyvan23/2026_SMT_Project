@@ -183,13 +183,14 @@ test_play <- one_on_data_sum %>% filter(game_string == "y1_d163_FNQ_PHD", play_p
 
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d070_SQF_ARN", play_per_game == 76)  ### 1st drops, model goes further as should
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d182_LRQ_ARN", play_per_game == 160)  ### 1st, doubled up
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_per_game == 113)  ### 2nd, doubled up
+
 test_play <- one_on_data_sum %>% filter(game_string == "y1_d195_ARN_PHD", play_per_game == 171)  ### 1st, ball dropped
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d153_VAS_PHD", play_per_game == 50)  ### runner and model similar
 
 
 
 ### play used
-test_play <- one_on_data_sum %>% filter(game_string == "y1_d153_VAS_PHD", play_per_game == 50)  ### 
+test_play <- one_on_data_sum %>% filter(game_string == "y1_d136_EXB_ARN", play_per_game == 113)  ### 2nd, doubled up
 
 ### needed variables
 max_speed <- max(test_play$runner_basepath_velo, test_play$speed_95_runner[1]/0.681818/95)
