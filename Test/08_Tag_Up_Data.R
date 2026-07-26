@@ -1,9 +1,12 @@
-
+### joining tag results with catch probability data
 tag_up_data <- tag_results %>% left_join(final_catch_prob_results, by = c("game_string", "play_per_game"))
 
+### joining runner positions
 tag_up_data <- tag_up_data %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "timestamp", "player_id_br" = "player_id"))
 tag_up_data <- tag_up_data %>% group_by(game_string, play_per_game, player_id_br) %>% filter(sum(is.na(field_x)) == 0)
 
+
+### calculating basepath
 tag_up_data <- tag_up_data %>% mutate(dist_1st = sqrt((field_x - x_1b)^2 + (field_y - y_1b)^2),
                                       dist_2nd = sqrt((field_x - x_2b)^2 + (field_y - y_2b)^2),
                                       dist_3rd = sqrt((field_x - x_3b)^2 + (field_y - y_3b)^2),
@@ -13,6 +16,7 @@ tag_up_data <- tag_up_data %>% mutate(basepath = case_when(field_y < 0 | (field_
                                                            field_y >= y_3b & field_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
                                                            field_y < y_3b & field_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
 
+### GAM model predicting basepath to smooth it out
 group <- 0
 tag_up_data <- tag_up_data %>% group_by(game_string, play_per_game, player_id_br) %>%
                  group_modify(~{group <<- group + 1
@@ -28,6 +32,8 @@ tag_up_data <- tag_up_data %>% group_by(game_string, play_per_game, player_id_br
 
 tag_up_data <- tag_up_data %>% select(-basepath) %>% rename(basepath = pred_basepath)
 
+
+### getting base positions
 tag_up_data <- tag_up_data %>% mutate(og_base_x = case_when(player_id_br == 11  ~  x_1b,
                                                             player_id_br == 12  ~  x_2b,
                                                             player_id_br == 13  ~  x_3b),
@@ -41,12 +47,14 @@ tag_up_data <- tag_up_data %>% mutate(next_base_x = case_when(player_id_br == 11
                                                               player_id_br == 12  ~  y_3b,
                                                               player_id_br == 13  ~  y_home))
 
+### joining neede data from fielders and catch probability
 tag_up_data <- tag_up_data %>% left_join(catch_prob_data %>% select(game_string, play_per_game, player_id, timestamp, pred_x, pred_y, OF_x_velo, OF_y_velo, OF_velo,
                                                                     time_to_ground, time_left_ground, ground_x, ground_y, OF_ground_x_dist, OF_ground_y_dist, OF_ground_dist, 
                                                                     wall_ground_dist, player_code),
                                          by = c("game_string", "play_per_game", "timestamp", "player_id"))
 
 
+### calculating velo, accels, and some distances
 tag_up_data <- tag_up_data %>% mutate(runner_basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
                                       runner_basepath_velo = ifelse(is.na(runner_basepath_velo), lead(runner_basepath_velo), runner_basepath_velo),
                                       runner_basepath_accel = (runner_basepath_velo - lag(runner_basepath_velo)) / ((timestamp - lag(timestamp))/1000),
@@ -57,6 +65,7 @@ tag_up_data <- tag_up_data %>% mutate(runner_basepath_velo = (basepath - lag(bas
                                       OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
                                       ground_next_dist = sqrt((ground_x - next_base_x)^2 + (ground_y - next_base_y)^2))
 
+### calculating angles and direction distances relative to next base
 tag_up_data <- tag_up_data %>% mutate(OF_ground_next_dist = ((OF_next_x_dist * OF_ground_x_dist) + (OF_next_y_dist * OF_ground_y_dist)) / 
                                                             OF_next_dist,
                                       OF_ground_next_angle = acos(OF_ground_next_dist / OF_ground_dist),
@@ -64,7 +73,7 @@ tag_up_data <- tag_up_data %>% mutate(OF_ground_next_dist = ((OF_next_x_dist * O
                                                       OF_next_dist,
                                       OF_next_velo_angle = acos(OF_next_velo / OF_velo))
 
-
+### getting runner speed and fielder throw speed
 tag_up_data <- tag_up_data %>% relocate(player_code, .after = OF_next_velo_angle)
 tag_up_data <- tag_up_data %>% left_join(lineups_players[,c(1,7,9:10)], by = c("game_string", "play_per_game", "player_id_br" = "player_id"),
                                          suffix = c("_OF", "_runner"))
@@ -73,12 +82,14 @@ tag_up_data <- tag_up_data %>% left_join(player_speed[,1:2], by = c("player_code
 tag_up_data <- tag_up_data %>% mutate(speed_95_throw = ifelse(is.na(speed_95_throw), mean(throw_speed$speed_95), speed_95_throw),
                                       speed_95_runner = ifelse(is.na(speed_95_runner), mean(player_speed$speed_95), speed_95_runner))
 
+### seeing if any baserunners in front that could affect ability to tag 
 tag_up_data <- tag_up_data %>% left_join(baserunners, by = c("game_string", "play_per_game"))
 tag_up_data <- tag_up_data %>% mutate(runners_front = case_when(player_id_br == 11  ~  ifelse(second == 1, second + third, 0),
                                                                 player_id_br == 12  ~  third,
                                                                 player_id_br == 13  ~  0)) %>%
                                select(-c(first:third))
 
+### calculating the catch probability given ball is caught
 tag_up_data <- tag_up_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
                                mutate(if_caught_catch_prob = catch_prob / sum(catch_prob),
                                       caught_prob = sum(catch_prob))
@@ -88,6 +99,7 @@ write.csv(tag_up_data, "tag_up_data.csv", row.names = FALSE)
 
 ##############################################################################################################################################################################################
 
+### weighing fielder stats by if_caught_catch_prob
 tag_up_data_sum <- tag_up_data %>% mutate(across(c(player_id, pred_x:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
                                                    speed_95_throw),
                                                  ~ weighted.mean(., if_caught_catch_prob)))
