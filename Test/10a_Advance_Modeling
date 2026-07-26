@@ -1,15 +1,13 @@
 
-advance_one_final <- advance_one_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
-advance_two_final <- advance_two_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
-advance_three_final <- advance_three_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+### originally did advance one, two, three models, using the previously done datasets, but sometimes the advance 3 % would be greater than advance 2 % when both really low
 
+### advance one dataset used for runners on 3rd base, took out a play with some inconsistent data
+advance_one_final <- advance_one_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
 advance_one_final <- advance_one_final %>% filter(game_string != "y1_d092_PHD_VAS", play_per_game != 27)
 
+### 10-fold cross validation
 set.seed(376)
 a1_folds <- createFolds(advance_one_final$advance_one, k = 10)
-a2_folds <- createFolds(advance_two_final$advance_two, k = 10)
-a3_folds <- createFolds(advance_three_final$advance_three, k = 10)
-
 
 act <- c()
 pred <- c()
@@ -29,47 +27,9 @@ a1_model <- gam(advance_one ~ og_basepath_dist + ground_next_dist + runner_basep
                 family = binomial, data = advance_one_final)
 summary(a1_model)
 
-
-act <- c()
-pred <- c()
-for(fold in a2_folds) {
-  print("-")
-  train <- advance_two_final[-fold, ]
-  test <- advance_two_final[fold, ]
-  model <- gam(advance_two ~ og_basepath_dist + ground_next2_dist + runner_basepath_velo + caught_prob + OF_ground_next2_angle, 
-               family = binomial, data = train)
-  act <- c(act, test$advance_two) 
-  pred <- c(pred, predict(model, newdata = test, type = "response"))
-}
-logLoss(act, pred)
-### 0.3589343
-
-a2_model <- gam(advance_two ~ og_basepath_dist + ground_next2_dist + runner_basepath_velo + OF_ground_next2_angle + speed_95_runner, 
-                family = binomial, data = advance_two_final)
-summary(a2_model)
-
-
-act <- c()
-pred <- c()
-for(fold in a3_folds) {
-  print("-")
-  train <- advance_three_final[-fold, ]
-  test <- advance_three_final[fold, ]
-  model <- gam(advance_three ~ og_basepath_dist + ground_next3_dist + runner_basepath_velo + OF_ground_next3_angle, 
-               family = binomial, data = train)
-  act <- c(act, test$advance_three) 
-  pred <- c(pred, predict(model, newdata = test, type = "response"))
-}
-logLoss(act, pred)
-### 0.4175473
-
-a3_model <- gam(advance_three ~ og_basepath_dist + ground_next3_dist + runner_basepath_velo + speed_95_runner, 
-                family = binomial, data = advance_three_final)
-summary(a3_model)
-
-
 ####################################################################################################################################################################
 
+### finding positions of next bases
 advance_data <- advance_data %>% mutate(next_base_x = case_when(player_id_br == 11  ~  x_2b,
                                                                 player_id_br == 12  ~  x_3b,
                                                                 player_id_br == 13  ~  x_home),
@@ -87,7 +47,7 @@ advance_data <- advance_data %>% mutate(next3_base_x = case_when(player_id_br ==
                                         next3_base_y = case_when(player_id_br == 11  ~  y_home,
                                                                  TRUE  ~  NA))
 
-
+### calculating distances and angle/direction/velo variables
 advance_data <- advance_data %>% mutate(OF_next_x_dist = pred_x - next_base_x,
                                         OF_next_y_dist = pred_y - next_base_y,
                                         OF_next_dist = sqrt(OF_next_x_dist^2 + OF_next_y_dist^2),
@@ -119,6 +79,7 @@ advance_data <- advance_data %>% mutate(OF_next3_x_dist = pred_x - next3_base_x,
                                                        OF_next3_dist,
                                         OF_next3_velo_angle = acos(OF_next3_velo / OF_velo))
 
+### weighing outfielder variables by if_caught_catch_prob
 advance_data_sum <- advance_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>% 
                                      mutate(across(c(player_id, pred_x:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
                                                      speed_95_throw, next_base_x:OF_next3_velo_angle),
@@ -128,17 +89,16 @@ advance_data_sum$succ_bases_advanced <- as.numeric(advance_data_sum$succ_bases_a
 
 write.csv(advance_data_sum, "advance_data_sum.csv", row.names = FALSE)
 
+### splitting datatsets for runners on first and runners on second
 baserunner_1st_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 11) %>% slice(n()) %>%
                                              filter(runner_basepath_velo < 0.35)
 baserunner_2nd_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 12) %>% slice(n()) %>%
                                              filter(runner_basepath_velo < 0.36)
-baserunner_3rd_final <- advance_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% filter(player_id_br == 13) %>% slice(n())
 
+### 10-fold cross validation for both
 set.seed(288)
 b1_folds <- createFolds(baserunner_1st_final$succ_bases_advanced, k = 10)
 b2_folds <- createFolds(baserunner_2nd_final$succ_bases_advanced, k = 10)
-b3_folds <- createFolds(baserunner_3rd_final$succ_bases_advanced, k = 10)
-
 
 act <- c()
 pred_hold <- matrix(ncol = 4)
@@ -184,11 +144,12 @@ logLoss(act, pred)
 ### 0.4129648
 
 
+### updating variable names for final runner model
 baserunner_1st_final <- baserunner_1st_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
 baserunner_2nd_final <- baserunner_2nd_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
 advance_one_final <- advance_one_final %>% mutate(forward_basepath = og_basepath_dist, forward_velo = runner_basepath_velo)
 
-
+### final models
 advance_first_model <- gam(succ_bases_advanced ~ forward_basepath + forward_velo + te(ground_x, ground_y, k = 5) + ti(og_basepath_dist, ground_next_dist, k = 3) + 
                                                  speed_95_runner,
                            family = ocat(R = 4), data = baserunner_1st_final)
