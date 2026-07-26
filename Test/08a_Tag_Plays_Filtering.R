@@ -1,8 +1,11 @@
+### taking final timestamps of tag plays
+tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
 
-tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
-tag_end <- tag_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
+### renaming basepath and velo to match use in modeling runner
 tag_end <- tag_end %>% rename(back_basepath = og_basepath_dist,
                               back_velo = runner_basepath_velo)
+
+### some plays the runner goes before final time when ball caught, taking them back to typical statioanary tag position
 tag_end <- tag_end %>% mutate(back_basepath = ifelse(back_basepath <= 0.14  &  back_velo > 0, 0.025, back_basepath),
                               back_velo = ifelse(back_basepath <= 0.14  &  back_velo > 0, 0, back_velo))
 
@@ -10,9 +13,10 @@ tag_end <- tag_end %>% mutate(back_basepath = ifelse(back_basepath <= 0.14  &  b
 ggplot(tag_end, aes(x = back_basepath, y = back_velo, color = succ_tag)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
+
+### 10-fold cross validation of GAM
 set.seed(637)
 tag_end_folds <- createFolds(tag_end$succ_tag, k = 10)
-
 
 act <- c()
 pred <- c()
@@ -32,7 +36,7 @@ plot(model, page = 1)
 summary(model)
 
 
-
+### final model used for modeled runner
 tag_end_model <- gam(succ_tag ~ te(back_basepath, ground_next_dist, k = 3) + wall_ground_dist + speed_95_throw + speed_95_runner, 
                      family = binomial, data = tag_end)
 summary(tag_end_model)
