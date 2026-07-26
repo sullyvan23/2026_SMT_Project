@@ -68,6 +68,7 @@ anim_save("example.gif", animation = last_animation())
 
 ###########################################################################################################################################################################################
 
+### animation function of whole field, largely based on the given animation function by SMT
 animate_model <- function() {  
   
   # Set the specs for the gif we want to create (lower res to make it run quicker)
