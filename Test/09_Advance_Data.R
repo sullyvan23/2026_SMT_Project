@@ -1,10 +1,11 @@
-
+### joining ball down and catch probability reults
 advance_data <- ball_down_results %>% select(-force) %>% left_join(final_catch_prob_results, by = c("game_string", "play_per_game"))
 
-
+### getting runner positions
 advance_data <- advance_data %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "timestamp", "player_id_br" = "player_id"))
 advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br) %>% filter(sum(is.na(field_x)) == 0)
 
+### calculating basepath
 advance_data <- advance_data %>% mutate(dist_1st = sqrt((field_x - x_1b)^2 + (field_y - y_1b)^2),
                                         dist_2nd = sqrt((field_x - x_2b)^2 + (field_y - y_2b)^2),
                                         dist_3rd = sqrt((field_x - x_3b)^2 + (field_y - y_3b)^2),
@@ -14,6 +15,7 @@ advance_data <- advance_data %>% mutate(basepath = case_when(field_y < 0 | (fiel
                                                              field_y >= y_3b & field_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
                                                              field_y < y_3b & field_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
 
+### using GAM for a smoother basepath for veli and accel
 group <- 0
 advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br) %>%
                  group_modify(~{group <<- group + 1
@@ -29,18 +31,21 @@ advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_
 
 advance_data <- advance_data %>% select(-basepath) %>% rename(basepath = pred_basepath)
 
+### getting needed data from fielders
 advance_data <- advance_data %>% left_join(catch_prob_data %>% select(game_string, play_per_game, player_id, timestamp, pred_x, pred_y, OF_x_velo, OF_y_velo, OF_velo,
                                                                       time_to_ground, time_left_ground, ground_x, ground_y, OF_ground_x_dist, OF_ground_y_dist, OF_ground_dist, 
                                                                       wall_ground_dist, player_code),
                                            by = c("game_string", "play_per_game", "timestamp", "player_id"),
                                            suffix = c("_runner", "_OF"))
 
+### calculting runner velo and accel, along with distance from original base
 advance_data <- advance_data %>% mutate(runner_basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
                                         runner_basepath_velo = ifelse(is.na(runner_basepath_velo), lead(runner_basepath_velo), runner_basepath_velo),
                                         runner_basepath_accel = (runner_basepath_velo - lag(runner_basepath_velo)) / ((timestamp - lag(timestamp))/1000),
                                         runner_basepath_accel = ifelse(is.na(runner_basepath_accel), lead(runner_basepath_accel), runner_basepath_accel),
                                         og_basepath_dist = basepath - player_id_br + 10)
 
+### getting runner speed and fielder throw speed
 advance_data <- advance_data %>% relocate(player_code, .after = og_basepath_dist)
 advance_data <- advance_data %>% left_join(lineups_players[,c(1,7,9:10)], by = c("game_string", "play_per_game", "player_id_br" = "player_id"),
                                            suffix = c("_OF", "_runner"))
@@ -48,19 +53,15 @@ advance_data <- advance_data %>% left_join(throw_speed[,1:2], by = c("player_cod
 advance_data <- advance_data %>% left_join(player_speed[,1:2], by = c("player_code_runner" = "player_code"), suffix = c("_throw", "_runner"))
 advance_data <- advance_data %>% mutate(speed_95_throw = ifelse(is.na(speed_95_throw), mean(throw_speed$speed_95), speed_95_throw),
                                         speed_95_runner = ifelse(is.na(speed_95_runner), mean(player_speed$speed_95), speed_95_runner))
-  
+
+### seeing if any runners in front that could hold them up
 advance_data <- advance_data %>% left_join(baserunners, by = c("game_string", "play_per_game"))
 advance_data <- advance_data %>% mutate(runners_front = case_when(player_id_br == 11  ~  ifelse(second == 1, second + third, 0),
                                                                   player_id_br == 12  ~  third,
                                                                   player_id_br == 13  ~  0)) %>%
                                  select(-c(first:third))
 
-advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
-                                 mutate(if_caught_catch_prob = ifelse(sum(catch_prob) == 0,
-                                                                      OF_ground_dist / sum(OF_ground_dist),
-                                                                      catch_prob / sum(catch_prob)),
-                                        caught_prob = sum(catch_prob))
-
+### getting catch probability given ball is caught
 advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_br, timestamp) %>%
                                  mutate(caught_prob = sum(catch_prob),
                                         if_caught_catch_prob = ifelse(caught_prob == 0,
@@ -70,12 +71,12 @@ advance_data <- advance_data %>% group_by(game_string, play_per_game, player_id_
 check <- advance_data %>% filter(game_string == "y1_d062_VKA_PHD", play_per_game == 217, timestamp == 6557434)
 
 ##############################################################################################################################################################################################
-
+### seperating by starting base
 advance_one_data <- advance_data
 advance_two_data <- advance_data %>% filter(player_id_br <= 12)
 advance_three_data <- advance_data %>% filter(player_id_br == 11)
 
-
+### calculating distances and direction angles for advancing _ bases
 advance_one_data <- advance_one_data %>% mutate(next_base_x = case_when(player_id_br == 11  ~  x_2b,
                                                                         player_id_br == 12  ~  x_3b,
                                                                         player_id_br == 13  ~  x_home),
@@ -121,13 +122,14 @@ advance_three_data <- advance_three_data %>% mutate(OF_next3_x_dist = pred_x - n
                                                                    OF_next3_dist,
                                                     OF_next3_velo_angle = acos(OF_next3_velo / OF_velo))
 
-
+#### seeing if successfully advanced that amount of bases
 advance_one_data <- advance_one_data %>% mutate(advance_one = ifelse(succ_bases_advanced >= 1, 1, 0))
 advance_two_data <- advance_two_data %>% mutate(advance_two = ifelse(succ_bases_advanced >= 2, 1, 0))
 advance_three_data <- advance_three_data %>% mutate(advance_three = ifelse(succ_bases_advanced == 3, 1, 0))
 
 ##############################################################################################################################################################################################
 
+### weighing fielder variables by if_caught_catch_prob
 advance_one_data_sum <- advance_one_data %>% mutate(across(c(player_id, pred_x:OF_velo, OF_ground_x_dist:OF_ground_dist, OF_next_x_dist:OF_next_dist, OF_ground_next_dist:OF_next_velo_angle, 
                                                              speed_95_throw),
                                                     ~ weighted.mean(., if_caught_catch_prob, na.rm = TRUE)))
