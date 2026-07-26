@@ -1,3 +1,5 @@
+
+### getting basepath and actual positions for all data
 basepath_deviation <- advance_one_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner)
 basepath_deviation <- bind_rows(basepath_deviation, tag_up_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner))
 basepath_deviation <- bind_rows(basepath_deviation, doubled_up_data_sum %>% select(game_string:player_id_br, timestamp, field_x:field_y, rmse_bp, basepath, speed_95_runner))
@@ -12,6 +14,7 @@ plot(basepath_deviation$basepath, basepath_deviation$field_y)
 
 ####################################################################################################################################################################################
 
+### 2-fold cross validation looking to find a good actual position for basepaths
 set.seed(377)
 basepath_folds <- groupKFold(basepath_deviation$basepath, k = 2)
 
@@ -46,20 +49,19 @@ RMSE(act, pred)
 plot(model, page = 1)
 
 
+### final models converting basepath to coordinates in animation
 basepath_x_model <- gam(field_x ~ s(basepath, k = 20), data = basepath_deviation)
 basepath_y_model <- gam(field_y ~ s(basepath, k = 20), data = basepath_deviation)
 
 plot(basepath_x_model, page = 1)
 
-
-basepath_pred_positions <- expand.grid(basepath = seq(1, 4, by = 0.01),
-                                       player_id_br = seq(11, 13, by = 1))
-basepath_pred_positions <- basepath_pred_positions %>% mutate(field_x = predict(basepath_x_model, newdata = basepath_pred_positions),
-                                                              field_y = predict(basepath_y_model, newdata = basepath_pred_positions))
-
 plot(basepath_pred_positions$field_x, basepath_pred_positions$field_y)
 
 ####################################################################################################################################################################################
+### testing that was done to check good limits for basepath speeds and accels
+### a lot of miscellaneous stuff, not enough data to have a model that says top possible next accels / speeds
+### but was able to see roughly an ellipse shape that inspired what was used in the model
+
 
 basepath <- basepath_deviation %>% group_by(game_string, play_per_game, player_id_br) %>% 
                                mutate(basepath_velo = (basepath - lag(basepath)) / ((timestamp - lag(timestamp))/1000),
