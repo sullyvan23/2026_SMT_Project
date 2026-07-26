@@ -1,7 +1,6 @@
-
+### leading packages needed
 if(!require("showtext")) {install.packages("showtext")}; library(showtext)
 library(showtext)
-font_add_google("Press Start 2P", "Press_Start_2P")
 font_add_google("Oswald", "Oswald")
 showtext_auto()
 
@@ -13,25 +12,30 @@ if(!require("sportyR")) {install.packages("sportyR")}; library(sportyR)
 if(!require("gganimate")) {install.packages("gganimate")}; library(gganimate)
 
 
-
+### making motion of runner after ball lands/caught
 after_model <- bind_rows(model_play[nrow(model_play),],
                          player_positions %>% filter(game_string == model_play$game_string[1],
                                                      play_per_game == model_play$play_per_game[1],
                                                      player_id == model_play$player_id[1],
                                                      timestamp > max(model_play$timestamp)) )
+
+### go_back data for balls caught and not by base to tag, go forward otherwie
 after_model <- go_back_final(after_model)
 after_model <- after_model %>% mutate(player_id_br = first(player_id_br),
                                       basepath = og_basepath_dist + player_id_br - 10)
 
+### joining together with model positions
 animate_positions <- bind_rows(model_play, after_model[2:nrow(after_model),]) %>% 
                      select(game_string, play_per_game, timestamp, caught_prob, player_id_br, basepath)
 
-
+### converting model runner basepaths to coordinates
 animate_positions <- animate_positions %>% rename(player_id = player_id_br) %>%
                                            mutate(player_id = player_id + 0.5,
                                                   field_x = predict(basepath_x_model, newdata = animate_positions),
                                                   field_y = predict(basepath_y_model, newdata = animate_positions)) %>%
                                            select(-basepath)
+
+### getting other player data and ball data
 animate_positions <- bind_rows(animate_positions,
                                player_positions %>% filter(game_string == animate_positions$game_string[1],
                                                            play_per_game == animate_positions$play_per_game[1]),
@@ -39,6 +43,8 @@ animate_positions <- bind_rows(animate_positions,
                                                          play_per_game == animate_positions$play_per_game[1]) %>%
                                                   rename(field_x = ball_position_x,
                                                          field_y = ball_position_y))
+
+### arranging by timestamp and adding catch probability to be used in animation
 animate_positions <- animate_positions %>% group_by(timestamp) %>%
                                            mutate(caught_prob = ifelse(!is.na(caught_prob), 
                                                                        paste0(as.character( pmax(pmin(5*round(caught_prob*20), 95), 5) ),
@@ -51,13 +57,16 @@ animate_positions <- animate_positions %>% arrange(timestamp)
 
 ### random number for randomized fielder images
 rand_num <- sample(0:2, 1)
+
+
+### animate model function
 animate_model()
 
+
+### save animations
 anim_save("example.gif", animation = last_animation())
 
 ###########################################################################################################################################################################################
-### DON'T RE-ENTER
-### doing new tests with this animation function and if you use this version instead of the one in the Rdata it won't work
 
 animate_model <- function() {  
   
@@ -181,7 +190,7 @@ animate_model <- function() {
 ###########################################################################################################################################################################################
 
 
-############################################
+### go back function similar to one used for creating modeled basepath, but returns dataset
 go_back_final <- function(input_data) {
   for(i in 2:nrow(input_data)) {
     ### close to minimum possible next acceleration
@@ -243,7 +252,7 @@ go_back_final <- function(input_data) {
 
 
 
-############################################
+### go forward function similar to one used for creating modeled basepath, but returns dataset
 go_forward_final <- function(input_data) {
   for(i in 2:nrow(input_data)) {
     ### close to minimum possible next acceleration
