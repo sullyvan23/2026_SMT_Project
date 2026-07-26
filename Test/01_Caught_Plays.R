@@ -51,11 +51,13 @@ baserunners_caught <- baserunners_caught %>% mutate(dist_1st = sqrt((field_x - x
                                                     dist_2nd = sqrt((field_x - x_2b)^2 + (field_y - y_2b)^2),
                                                     dist_3rd = sqrt((field_x - x_3b)^2 + (field_y - y_3b)^2),
                                                     dist_home = sqrt((field_x - x_home)^2 + (field_y - y_home)^2))
+### creating basepath variable
 baserunners_caught <- baserunners_caught %>% mutate(basepath = case_when(field_y < 0 | (field_y < 50 & field_x > 0)  ~  4, 
                                                                          field_y >= 50 & field_x > x_2b  ~  1 + (dist_1st / (dist_1st + dist_2nd)),
                                                                          field_y >= y_3b & field_x <= x_2b  ~  2 + (dist_2nd / (dist_2nd + dist_3rd)),
                                                                          field_y < y_3b & field_x <= x_home  ~  3 + (dist_3rd / (dist_3rd + dist_home)) ))
 
+### seeing what situation looks like next play
 baserunners_caught <- baserunners_caught %>% mutate(next_play = play_per_game + 1)
 baserunners_caught <- baserunners_caught %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "next_play" = "play_per_game"),
                                                        suffix = c("", "_next"))
@@ -70,6 +72,7 @@ final_br_positions <- baserunners_caught %>% group_by(game_string, play_per_game
 caught_end_positions <- caught_end_positions %>% left_join(final_br_positions[,c(1:2,5,14)], by = c("game_string", "play_per_game", "player_id_br"),
                                                            suffix = c("_caught", "_end"))
 
+### seeing where runners were when the ball was caught, and where they moved after that until the tracking data of the play ended
 caught_end_positions <- caught_end_positions %>% mutate(og_base_dist = case_when(player_id_br == 11  ~  basepath_caught - 1,
                                                                                  player_id_br == 12  ~  basepath_caught - 2,
                                                                                  player_id_br == 13  ~  basepath_caught - 3),
@@ -79,14 +82,16 @@ caught_end_positions <- caught_end_positions %>% mutate(next_play = play_per_gam
 caught_end_positions <- caught_end_positions %>% left_join(lineups[,c(1,7,3)], by = c("game_string", "next_play" = "play_per_game"),
                                                            suffix = c("", "_next"))
 
+### seeing if it went to the next half inning after the catch
 caught_end_positions <- caught_end_positions %>% mutate(not_end = ifelse(half_inning == half_inning_next, 1, 0),
                                                         not_end = ifelse(is.na(not_end), 0, not_end))
 
+### plot and color help to show patterns of what tag up plays / plays where the runner went back vs plays where the runner just kept going (2 outs) looks like
 ggplot(caught_end_positions, aes(x = og_base_dist, y = after_catch_dist, color = not_end)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
 
-
+### filtering out plays in the definite 2 outs region
 less_2_outs_caught <- caught_end_positions %>% filter(!(og_base_dist > 0.5  &  after_catch_dist > -0.01))
 
 ggplot(less_2_outs_caught, aes(x = og_base_dist, y = after_catch_dist, color = not_end)) + 
@@ -95,12 +100,14 @@ ggplot(less_2_outs_caught, aes(x = og_base_dist, y = after_catch_dist, color = n
 
 ##############################################################################################################################################################################################
 
+### gathering baserunner positions and ball events
 baserunners_less2 <- less_2_outs_caught[,-4] %>% distinct() %>%
                                                  left_join(player_positions[,1:6] %>% filter(player_id %in% c(11:13)),
                                                            by = c("game_string", "play_per_game", "player_id_br" = "player_id"))
 baserunners_less2 <- baserunners_less2 %>% left_join(ball_events[,1:5], by = c("game_string", "play_per_game", "timestamp"),
                                                      suffix = c("_br", ""))
 
+### seing when a player has possessin of the ball, and where that player is
 baserunners_less2 <- baserunners_less2 %>% group_by(game_string, play_per_game, player_id_br) %>% 
                                            mutate(ball_possessed = 0, 
                                                   ball_eventcode = ifelse(is.na(ball_eventcode), " ", ball_eventcode)) %>%
@@ -129,17 +136,20 @@ baserunners_less2 <- baserunners_less2 %>% left_join(player_positions[,1:6], by 
                                                      suffix = c("_runner", "_fielder"))
 
 
+### seeing distance of runner to projected base they are trying to get to after the ball is caught (boriginal if going back, next if tagging)
 baserunners_less2 <- baserunners_less2 %>% mutate(final_dist = case_when(player_id_br == 11  ~  basepath_end - 1,
                                                                          player_id_br == 12  ~  basepath_end - 2,
                                                                          player_id_br == 13  ~  basepath_end - 3))
 
 baserunners_less2 <- baserunners_less2 %>% left_join(baserunners, by = c("game_string", "next_play" = "play_per_game"))
 
+### seperating going back and tagging up plays
 pot_tag_up <- baserunners_less2 %>% filter(after_catch_dist >= 0.3)
 going_back <- baserunners_less2 %>% filter(after_catch_dist < 0.3)
 
 ##############################################################################################################################################################################################
 
+### estimating safe or out by if a runner is at the projected destination base the next play
 going_back <- going_back %>% ungroup() %>%
                              mutate(og_run_dist = case_when(player_id_br == 11  ~  sqrt((field_x_runner - x_1b)^2 + (field_y_runner - y_1b)^2),
                                                             player_id_br == 12  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
@@ -151,6 +161,7 @@ going_back <- going_back %>% ungroup() %>%
                                                          player_id_br == 12  ~  ifelse(is.na(second), 0.5, second),
                                                          player_id_br == 13  ~  ifelse(is.na(third), 0.5, third)))
 
+### seeing if the runner has gotten within 4 feet of their destination base
 going_back <- going_back %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
                              group_modify(~{
                                for(i in 2:nrow(.x)) {
@@ -163,18 +174,23 @@ going_back <- going_back %>% group_by(game_string, play_per_game, player_id_br) 
                                .x
                              })
 
+### seeing if there is any time a fielder with the ball is within 5 feet of a runner before they get within 4 feet of their base
+### through observation of plays determined to be out by looking at the next play, these thresholds appeared to work well
 going_back <- going_back %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  og_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
+
 
 ggplot(going_back %>% filter(og_field_dist < 10), aes(x = og_run_dist, y = og_field_dist, color = pos_safe_est)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
 
+### summarising plays with safe or out estimate
 going_back_results <- going_back %>% summarise(og_base_dist = first(og_base_dist),
                                                after_catch_dist = first(after_catch_dist),
                                                safe_back = first(pos_safe_est))
 
 ##############################################################################################################################################################################################
 
+### estimating safe or out by if a runner is at the projected destination base the next play
 pot_tag_up <- pot_tag_up %>% ungroup() %>%
                              mutate(next_run_dist = case_when(player_id_br == 11  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
                                                               player_id_br == 12  ~  sqrt((field_x_runner - x_3b)^2 + (field_y_runner - y_3b)^2),
@@ -184,6 +200,7 @@ pot_tag_up <- pot_tag_up %>% ungroup() %>%
                                                          player_id_br == 12  ~  ifelse(is.na(third), 0.5, third),
                                                          player_id_br == 13  ~  0.5))
 
+### seeing if the runner has gotten within 4 feet of their destination base
 pot_tag_up <- pot_tag_up %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
                              group_modify(~{
                                for(i in 2:nrow(.x)) {
@@ -196,30 +213,31 @@ pot_tag_up <- pot_tag_up %>% group_by(game_string, play_per_game, player_id_br) 
                                .x
                              })
 
+### seeing if there is any time a fielder with the ball is within 5 feet of a runner before they get within 4 feet of their base
 pot_tag_up <- pot_tag_up %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  run_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
 
 ggplot(pot_tag_up %>% filter(run_field_dist < 10), aes(x = next_run_dist, y = run_field_dist, color = safe_est)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
-
+### summarising plays with safe or out estimate
 pot_tag_up_results <- pot_tag_up %>% summarise(og_base_dist = first(og_base_dist),
                                                after_catch_dist = first(after_catch_dist),
                                                final_dist = first(final_dist),
                                                safe_tag = first(pos_safe_est))
 
 
-
+### filtering out plays where there is a lag between player and ball data, runner already going while ball still definitely in the air
 tag_check <- pot_tag_up %>% left_join(ball_caught[,c(1:2,4)], by = c("game_string", "play_per_game"), suffix = c("", "_caught"))
 tag_check <- tag_check %>% filter(timestamp >= (timestamp_caught - 500))
 tag_check <- tag_check %>% group_by(game_string, play_per_game, player_id_br) %>% 
                            summarise(max_next_run_dist = max(next_run_dist))
-
 
 pot_tag_up_results <- pot_tag_up_results %>% left_join(tag_check, by = c("game_string", "play_per_game", "player_id_br"))
 pot_tag_up_results <- pot_tag_up_results %>% filter(max_next_run_dist > 82) %>% select(-max_next_run_dist)
 
 ##############################################################################################################################################################################################
 
+### gathering all data I need into datasets for tagging and doubling up
 doubled_up_results <- going_back_results[,c(1:3,6)]
 
 tag_results <- bind_rows(pot_tag_up_results[,c(1:3,7)], going_back_results[,1:3])
@@ -232,21 +250,3 @@ write.csv(tag_results, "tag_results.csv", row.names = FALSE)
 
 ##############################################################################################################################################################################################
 
-### plays doubled up
-y1_d128_MEX_ANI
-267
-y1_d136_EXB_ARN
-113
-y1_d168_BTL_ARN
-13
-y1_d172_OWV_VAS
-226                      ### delayed fielder motion
-y1_d182_LRQ_ARN
-160
-y1_d196_ARN_PHD
-282
-y1_d202_PHD_VAS
-9
-y1_d202_PHD_VAS
-195
-y1_d203_PHD_VAS
