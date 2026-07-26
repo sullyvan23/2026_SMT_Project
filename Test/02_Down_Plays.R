@@ -41,9 +41,11 @@ baserunners_down_end <- baserunners_down %>% group_by(game_string, play_per_game
 plot(baserunners_down_end$player_id_br, baserunners_down_end$basepath)
 plot(baserunners_down_end$field_x, baserunners_down_end$field_y)
 
+### seing outcome of play by what next play looks like
 baserunners_down_end <- baserunners_down_end %>% mutate(next_play = play_per_game + 1)
 baserunners_down_end <- baserunners_down_end %>% left_join(baserunners, by = c("game_string", "next_play" = "play_per_game"))
 
+### estimating final attempted base advancing to
 baserunners_down_end <- baserunners_down_end %>% group_by(game_string, play_per_game, player_id_br) %>%
                                                  mutate(final_base = case_when(basepath < 1.5  ~  1,
                                                                                basepath < 2.5 & basepath >= 1.5  ~  2,
@@ -63,6 +65,7 @@ baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, pl
 baserunners_down <- baserunners_down %>% left_join(ball_events[,1:5], by = c("game_string", "play_per_game", "timestamp"),
                                                    suffix = c("_br", ""))
 
+### seing when and where any player possessing the ball is
 baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, player_id_br) %>% 
                                          mutate(ball_possessed = 0, 
                                                 ball_eventcode = ifelse(is.na(ball_eventcode), " ", ball_eventcode)) %>%
@@ -91,6 +94,7 @@ baserunners_down <- baserunners_down %>% left_join(player_positions[,1:6], by = 
                                                    suffix = c("_runner", "_fielder"))
 
 
+### seing if there was a force play
 baserunners_down <- baserunners_down %>% left_join(baserunners, by = c("game_string", "play_per_game"))
 baserunners_down <- baserunners_down %>% mutate(force = case_when(player_id_br == 11  ~  ifelse(final_base == 2, 1, 0),
                                                                   player_id_br == 12  ~  ifelse(first == 1  &  final_base == 3, 1, 0),
@@ -101,6 +105,7 @@ baserunners_down <- baserunners_down %>% mutate(next_play = play_per_game + 1)
 baserunners_down <- baserunners_down %>% left_join(baserunners, by = c("game_string", "next_play" = "play_per_game"))
 
 
+### estimating outcome based on next play
 baserunners_down <- baserunners_down %>% ungroup() %>%
                              mutate(next_run_dist = case_when(final_base == 1  ~  sqrt((field_x_runner - x_1b)^2 + (field_y_runner - y_1b)^2),
                                                               final_base == 2  ~  sqrt((field_x_runner - x_2b)^2 + (field_y_runner - y_2b)^2),
@@ -118,6 +123,7 @@ baserunners_down <- baserunners_down %>% ungroup() %>%
                                                          final_base == 4  ~  0.5))
 
 
+### seeing if the runner has gotten within 4 feet of their destination base
 baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, player_id_br) %>% mutate(runner_within_4 = 0) %>%
                                          group_modify(~{
                                            for(i in 2:nrow(.x)) {
@@ -132,10 +138,12 @@ baserunners_down <- baserunners_down %>% group_by(game_string, play_per_game, pl
 
 baserunners_down <- baserunners_down %>% mutate(min_field_dist = ifelse(player_id == 10, NA, min_field_dist))
 
+### estimating safe or out by positions
 baserunners_down <- baserunners_down %>% mutate(pos_safe_est = ifelse(sum(runner_within_4 == 0  &  min_field_dist <= 5, na.rm = TRUE) > 0, 0, 1))
 
 ##############################################################################################################################################################################################
 
+### summarizing successful bases advanced results in dataset
 ball_down_results <- baserunners_down %>% summarise(force = first(force),
                                                     final_base = first(final_base),
                                                     safe_advance = first(pos_safe_est))
