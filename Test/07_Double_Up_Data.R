@@ -1,9 +1,11 @@
 
+#### gathering all runner data
 doubled_up_data <- doubled_up_results %>% left_join(final_catch_prob_results, by = c("game_string", "play_per_game"))
 
 doubled_up_data <- doubled_up_data %>% left_join(player_positions[,1:6], by = c("game_string", "play_per_game", "timestamp", "player_id_br" = "player_id"))
 doubled_up_data <- doubled_up_data %>% group_by(game_string, play_per_game, player_id_br) %>% filter(sum(is.na(field_x)) == 0)
 
+### finding origibal base positions
 doubled_up_data <- doubled_up_data %>% mutate(og_base_x = case_when(player_id_br == 11  ~  x_1b,
                                                                     player_id_br == 12  ~  x_2b,
                                                                     player_id_br == 13  ~  x_3b),
