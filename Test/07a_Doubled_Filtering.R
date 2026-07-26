@@ -1,11 +1,11 @@
-
+### looking at only final timestamps of play
 doubled_up_final <- doubled_up_data_sum %>% group_by(game_string, play_per_game, player_id_br) %>% slice(n())
 
 ggplot(doubled_up_final, aes(x = og_basepath_dist, y = ground_og_dist, color = safe_back)) + 
        geom_point() + scale_color_gradient2(high = "green", low = "red", mid = "white", midpoint = 0.5)
 
 
-
+### 10 fold cross validation testing GAM model
 set.seed(883)
 final_doubled_folds <- createFolds(doubled_up_final$safe_back, k = 10)
 
@@ -28,8 +28,10 @@ plot(model, page = 1)
 summary(model)
 
 
+### adjusting variable names so it works for modeling runner motion
 doubled_up_final <- doubled_up_final %>% rename(back_basepath = og_basepath_dist, back_velo = runner_basepath_velo)
 
+### final model to be used
 final_doubled_model <- gam(safe_back ~ back_basepath + ground_og_dist + back_velo + speed_95_throw, 
                            family = binomial, data = doubled_up_final)
 summary(final_doubled_model)
