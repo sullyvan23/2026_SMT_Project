@@ -1,10 +1,13 @@
 
+### taking all fly balls
 fly_balls <- bind_rows(ball_caught %>% mutate(caught = 1), 
                        ball_down %>% mutate(caught = 0))
 
+### have times of contacted by batter and hit ground / caught
 fly_balls <- fly_balls %>% rename(timestamp_done = timestamp) %>%
                            mutate(timestamp_hit = timestamp_done - (1000*time_air)) %>% relocate(timestamp_hit, .before = timestamp_done)
 
+### looking at relative caught heights to find a good high end value
 fly_balls <- fly_balls %>% group_by(home_team) %>%
                            mutate(caught_height = case_when(home_team == "ANI"  ~  ball_position_z - predict(ground_ANI_model, newdata = pick(everything())),
                                                             home_team == "ARN"  ~  ball_position_z - predict(ground_ARN_model, newdata = pick(everything())),
@@ -15,29 +18,34 @@ fly_balls <- fly_balls %>% group_by(home_team) %>%
 
 hist(fly_balls$caught_height, breaks = 50)
 ### centered at 6
-### realistic max at 8
+### mostly realistic max at 8
 
 ############################################################################################################################################################################################
 
+### finding ball positions, and taking last five timestamps of ball flight
 fly_balls_proj <- fly_balls[,c(1:2,4:5,8)] %>% left_join(ball_positions[,1:6], by = c("game_string", "play_per_game"))
 fly_balls_proj <- fly_balls_proj %>% filter(timestamp <= timestamp_done, timestamp >= timestamp_hit)%>% 
                                      group_by(game_string, play_per_game) %>% 
                                      mutate(timestamp = (timestamp - first(timestamp))/1000) %>% slice(  (n()-5) : (n()-1) )
 
 
+### going through all plays to find ground position and time
 group <- 0
 fly_balls_proj_pos <- fly_balls_proj %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
                                   message(group/nrow(fly_balls))
-                                  
+
+                         models estimating coordinates by time
                          ball_x_model <- gam(ball_position_x ~ s(timestamp, k = 3), data = pick(everything()) )
                          ball_y_model <- gam(ball_position_y ~ s(timestamp, k = 3), data = pick(everything()) )
                          ball_z_model <- gam(ball_position_z ~ s(timestamp, k = 3), data = pick(everything()) )
 
+                         ### taking RMSE, to look at later and maybe filter out plays with erratic tracking data
                          x_rmse <- RMSE(ball_position_x, predict(ball_x_model), na.rm = TRUE)
                          y_rmse <- RMSE(ball_position_y, predict(ball_y_model), na.rm = TRUE)
                          z_rmse <- RMSE(ball_position_z, predict(ball_z_model), na.rm = TRUE)
 
+                         ### using the ball pos models, and models of ground height, and using the uniroot to find where, ball height - ground height = 0, as a function of time
                          ground_dist_function <- function(time) {
                             times_dataset <- data.frame(timestamp = time)
 
@@ -64,7 +72,8 @@ fly_balls_proj_pos <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
                          ground_times <- data.frame(
                             timestamp = ball_hits_ground_time
                           )
-
+    
+                          ### returning the time and position of projected ground contact
                           tibble(
                             time_to_ground = ball_hits_ground_time,
                             ground_x = predict(ball_x_model, newdata = ground_times),
@@ -78,6 +87,7 @@ fly_balls_proj_pos <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
                        )
 
 
+### same thing as above but for when and where the ball is 8ft above the ground
 group <- 0
 fly_balls_proj_8ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>%
                        summarise({group <<- group + 1
@@ -132,6 +142,7 @@ fly_balls_proj_8ft <- fly_balls_proj %>% group_by(game_string, play_per_game) %>
 
 ############################################################################################################################################################################################
 
+### joining positions and times
 fly_ball_land <- fly_balls %>% left_join(fly_balls_proj_pos, by = c("game_string", "play_per_game"))
 fly_ball_land <- fly_ball_land %>% left_join(fly_balls_proj_8ft, by = c("game_string", "play_per_game"), suffix = c("_ground", "_8ft"))
 fly_ball_land <- fly_ball_land %>% filter(!time_to_ground == -1, !time_eight_ft == -1)
@@ -145,6 +156,7 @@ plot(fly_ball_land$ground_dist, fly_ball_land$eight_ft_dist)
 
 ############################################################################################################################################################################################
 
+### putting ball data and player positions data together
 could_catch <- fly_ball_land %>% select(game_string, play_per_game, home_team, timestamp_hit, timestamp_done, player_id, caught, time_to_ground:ground_z, time_eight_ft:eight_ft_z)
 could_catch <- could_catch %>% left_join(player_positions[,1:6] %>% filter(player_id %in% c(3:9)),
                                          by = c("game_string", "play_per_game", "timestamp_hit" = "timestamp"),
@@ -179,10 +191,11 @@ logLoss(act, pred)
 plot(model, pages = 1)
 
 
+### model estimating chance of being caught
 catch_chance_model <- gam(player_caught ~ te(ground_dist, time_to_ground) + te(eight_ft_dist, time_eight_ft) + OF, 
                           family = binomial, data = could_catch)
 
-
+### no ball was caught by someone with less than 1% chance original from model, filter to only those players for true catch probability model to reduce dataset working with
 could_catch <- could_catch %>% ungroup %>% mutate(player_catch_prob = predict(catch_chance_model, type = "response"))
 could_catch_players <- could_catch %>% group_by(game_string, play_per_game) %>%
                                        filter(player_catch_prob >= 0.01  |  player_catch_prob > sort(player_catch_prob, decreasing = TRUE)[3])
