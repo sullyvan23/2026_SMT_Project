@@ -1,9 +1,11 @@
 
+### looking at positions of the batters on advance plays
 batter_advance <- advance_data %>% ungroup() %>% select(game_string, play_per_game, ground_x, ground_y, time_to_ground, caught_prob) %>%
                                    group_by(game_string, play_per_game) %>% slice(1)
 batter_advance <- batter_advance %>% left_join(player_positions[,1:6] %>% filter(player_id == 10), by = c("game_string", "play_per_game"))
 batter_advance <- batter_advance %>% slice(n())
 
+### calculating basepath
 batter_advance <- batter_advance %>% mutate(dist_1st = sqrt((field_x - x_1b)^2 + (field_y - y_1b)^2),
                                             dist_2nd = sqrt((field_x - x_2b)^2 + (field_y - y_2b)^2),
                                             dist_3rd = sqrt((field_x - x_3b)^2 + (field_y - y_3b)^2),
@@ -16,28 +18,9 @@ batter_advance <- batter_advance %>% mutate(final_base = round(basepath))
 batter_advance <- batter_advance %>% filter(final_base < 4)
 
 
-
+### 10-fold cross validation to estimate how far a batter is likely to advance from initial data
 set.seed(829)
 bat_folds <- createFolds(batter_advance$final_base, k = 10)
-
-act <- c()
-pred <- c()
-for(fold in bat_folds) {
-  print("-")
-  train <- batter_advance[-fold, ]
-  test <- batter_advance[fold, ]
-  model <- gam(final_base ~ te(ground_x, ground_y, k = 6), 
-               data = train)
-  act <- c(act, test$final_base)
-  pred <- c(pred, predict(model, newdata = test))
-}
-RMSE(act, pred)
-### 0.4390282
-
-plot(model, page = 1)
-summary(model)
-
-####################################################################################################################################################################
 
 act <- c()
 pred_hold <- matrix(ncol = 3)
@@ -60,8 +43,10 @@ logLoss(act, pred)
 ### 0.5727799
 
 
+### final model used
 batter_bases_model <- gam(final_base ~ te(ground_x, ground_y, k = 6) + time_to_ground, family = ocat(R = 3), data = batter_advance)
 plot(batter_bases_model, pages = 1)
+
 
 batter_advance <- cbind(batter_advance, predict(batter_bases_model, type = "response"))
 batter_advance <- batter_advance %>% rename(advance_1 = "1",
