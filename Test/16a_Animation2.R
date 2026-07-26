@@ -1,11 +1,14 @@
 
+### getting angle to shift coordinates
 angle <- ifelse(model_play$player_id_br[1] == 12, -pi/4, pi/4)
 
+### shifting coordinates to match basepath animation
 new_animate_positions <- animate_positions %>% mutate(new_field_x = (field_x * cos(angle)) - (field_y * sin(angle)),
                                                       new_field_y = (field_x * sin(angle)) + (field_y * cos(angle)),
                                                       field_x = new_field_x, field_y = new_field_y) %>%
                                                select(-c(new_field_x:new_field_y))
 
+### changing limits of what data is needed for animation
 if(model_play$player_id_br[1] == 11) {
   new_animate_positions <- new_animate_positions %>% filter(between(field_x, -105.3, 15.3), between(field_y, 61, 115.9))
 } else if(model_play$player_id_br[1] == 12) {
@@ -14,13 +17,15 @@ if(model_play$player_id_br[1] == 11) {
   new_animate_positions <- new_animate_positions %>% filter(between(field_x, -105.3, 15.3), between(field_y, -25.9, 29))
 }
 
-
+### animation function
 animate_basepath()
 
+### save
 anim_save("example.gif", animation = last_animation())
 
 ############################################################################################################################################################################################
 
+### animation function of close up, largely based on the given animation function by SMT
 animate_basepath <- function() {
 
   # Set the specs for the gif we want to create (lower res to make it run quicker)
