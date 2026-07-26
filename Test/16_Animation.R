@@ -49,6 +49,8 @@ animate_positions <- animate_positions %>% group_by(timestamp) %>%
 animate_positions <- animate_positions %>% arrange(timestamp)
 
 
+### random number for randomized fielder images
+rand_num <- sample(0:2, 1)
 animate_model()
 
 anim_save("example.gif", animation = last_animation())
@@ -57,10 +59,7 @@ anim_save("example.gif", animation = last_animation())
 ### DON'T RE-ENTER
 ### doing new tests with this animation function and if you use this version instead of the one in the Rdata it won't work
 
-animate_model <- function() {
-
-  ### random number for randomized fielder images
-  rand_num <- sample(0:2, 1)
+animate_model <- function() {  
   
   # Set the specs for the gif we want to create (lower res to make it run quicker)
   options(gganimate.dev_args = list(width = 3, height = 3, units = 'in', res = 120))
