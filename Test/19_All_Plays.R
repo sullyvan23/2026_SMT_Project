@@ -1,4 +1,6 @@
 
+### running model for all plays to get leaderboard
+
 plays_share_data <- plays_share %>% mutate(runner_basepath_accel = ifelse(abs(runner_basepath_accel) > 0.3,
                                                                          0.3 * sign(runner_basepath_accel),
                                                                          runner_basepath_accel),
@@ -81,13 +83,13 @@ for(g in 1:max(plays_share_data$group)) {
     ### giving range of next possible acclerations
     accels <- seq(round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                         model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                           -(model_play$runner_basepath_velo[i-1]/10) - ((-0.2+model_play$og_basepath_dist[i-1])/10),
+                                                           -(model_play$runner_basepath_velo[i-1]/40) - ((-0.2+model_play$og_basepath_dist[i-1])/30),
                                                            -(model_play$runner_basepath_velo[i-1]/80)) -
                         (ifelse(model_play$runner_basepath_velo[i-1] > 0, 0.0075, 0.005) * (fps/0.05)), 
                         3),
                   round(model_play$runner_basepath_accel[i-1] + ((1-model_play$ellipse[i-1]^1) * (model_play$runner_basepath_accel[i-1] - model_play$runner_basepath_accel_2[i-1])) +
                         model_play$ellipse[i-1]^1 * ifelse(model_play$og_basepath_dist[i-1] <= 0.2  &  model_play$runner_basepath_velo[i-1] <= 0,
-                                                           -(model_play$runner_basepath_velo[i-1]/10) - ((-0.2+model_play$og_basepath_dist[i-1])/10),
+                                                           -(model_play$runner_basepath_velo[i-1]/40) - ((-0.2+model_play$og_basepath_dist[i-1])/30),
                                                            -(model_play$runner_basepath_velo[i-1]/80)) +
                         (ifelse(model_play$runner_basepath_velo[i-1] < 0, 0.0075, 0.005) * (fps/0.05)), 
                         3),
@@ -98,12 +100,12 @@ for(g in 1:max(plays_share_data$group)) {
     next_time_check$runner_basepath_accel <- accels
     next_time_check <- next_time_check %>% mutate(runner_basepath_velo = model_play$runner_basepath_velo[i-1] + (runner_basepath_accel*fps),
                                                   og_basepath_dist = model_play$og_basepath_dist[i-1] + (runner_basepath_velo*fps),
-                                                  og_basepath_dist = ifelse(og_basepath_dist < 0.025, 0.025, og_basepath_dist),
+                                                  og_basepath_dist = ifelse(og_basepath_dist <= 0.025, 0.025, og_basepath_dist),
                                                   basepath = og_basepath_dist + player_id_br - 10,
                                                   runner_basepath_accel_2 = model_play$runner_basepath_accel[i-1],
                                                   ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                             ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
-                                                                   max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.225)^2 / 0.2^2) ),
+                                                                   max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.224)^2 / 0.2^2) ),
                                                                      (runner_basepath_accel^2 / max_accel^2) ))
   
     ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
@@ -115,12 +117,12 @@ for(g in 1:max(plays_share_data$group)) {
              next_time_check <- next_time_check %>% mutate(runner_basepath_velo = runner_basepath_velo - (sign(runner_basepath_velo) * 0.0005)))
   
       next_time_check <- next_time_check %>% mutate(og_basepath_dist = model_play$og_basepath_dist[i-1] + (runner_basepath_velo*fps),
-                                                    og_basepath_dist = ifelse(og_basepath_dist < 0.025, 0.025, og_basepath_dist),
+                                                    og_basepath_dist = ifelse(og_basepath_dist <= 0.025, 0.025, og_basepath_dist),
                                                     runner_basepath_velo = ifelse(og_basepath_dist == 0.025, 0, runner_basepath_velo))
       
       next_time_check <- next_time_check %>% mutate(ellipse = (runner_basepath_velo^2 / max_speed^2) +
                                                               ifelse(og_basepath_dist <= 0.2  &  runner_basepath_velo <= 0,
-                                                                     max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.225)^2 / 0.2^2) ),
+                                                                     max( (runner_basepath_accel^2 / max_accel^2) , ((og_basepath_dist-0.224)^2 / 0.2^2) ),
                                                                        (runner_basepath_accel^2 / max_accel^2) ))
     }
   
@@ -179,6 +181,7 @@ save.image("new.Rdata")
 
 ##########################################################################################################################################################################################
 
+### joining results of all plays and model
 play_vs_model_data <- plays_share_data[,c(1:5,10,26,52)] %>% left_join(modeled_play_data[,c(1:2,4:5,10,52)],
                                                                  by = c("game_string", "play_per_game", "player_id_br", "timestamp"),
                                                                  suffix = c("_play", "_model"))
@@ -200,13 +203,15 @@ hist(play_vs_model_summarise$percent, breaks = 50)
 check <- play_vs_model_summarise %>% left_join(advance_data[,c(1:3,7)], by = c("game_string", "play_per_game", "player_id_br")) %>% slice(1)
 
 
+### filter roughly for taking out plays with 2 outs (runner runs way further than model and is just fully accelerating forward)
 plays_leaderboard <- play_vs_model_summarise %>% filter(percent > 0.9, basepath_diff < 0.5)
 plays_leaderboard <- plays_leaderboard %>% group_by(player_code_runner) %>%
                                            summarise(avg_percent = mean(percent),
                                                      avg_exp_runs_lost = mean(exp_runs_lost),
                                                      count = n())
-plays_leaderboard <- plays_leaderboard %>% filter(count >= 5)
 
+### filter for at least 5 and give grades, based off rough histogram
+plays_leaderboard <- plays_leaderboard %>% filter(count >= 5)
 plays_leaderboard <- plays_leaderboard %>% mutate(grade = case_when(avg_percent >= 1  ~  "A+",
                                                                     avg_percent >= 0.998  ~  "A",
                                                                     avg_percent >= 0.996  ~  "A-",
