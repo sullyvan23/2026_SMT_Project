@@ -1,3 +1,80 @@
+library(png)
+
+### background for field
+field_background <- readPNG("field_background.png")
+field_background_plot <- function() {
+  ggplot() + 
+  annotation_raster(field_background,
+                    xmin = -278, xmax = 278,
+                    ymin = -35, ymax = 469.8) +
+  coord_fixed(
+    xlim = c(-278, 278),
+    ylim = c(-35, 469.8),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+field_background_plot() + geom_point(aes(x = x_1b, y = y_1b))
+
+
+### background for first base to second base
+from_first <- readPNG("from_first.png")
+first_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_first,
+                    xmin = -105.3, xmax = 15.3,
+                    ymin = 61, ymax = 115.9) +
+  coord_fixed(
+    xlim = c(-105.3, 15.3),
+    ylim = c(61, 115.9),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+first_base_line_plot() + geom_point(aes(x = 0, y = 90))
+
+
+### background for second base to third base
+from_second <- readPNG("from_second.png")
+second_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_second,
+                    xmin = -15.3, xmax = 105.3,
+                    ymin = 61, ymax = 115.9) +
+  coord_fixed(
+    xlim = c(-15.3, 105.3),
+    ylim = c(61, 115.9),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+second_base_line_plot() + geom_point(aes(x = 90, y = 90))
+
+
+### background for third base to home plate
+from_third <- readPNG("from_third.png")
+third_base_line_plot <- function() {
+  ggplot() + 
+  annotation_raster(from_third,
+                    xmin = -105.3, xmax = 15.3,
+                    ymin = -25.9, ymax = 29) +
+  coord_fixed(
+    xlim = c(-105.3, 15.3),
+    ylim = c(-25.9, 29),
+    expand = FALSE
+  ) +
+  theme_void()
+}
+
+third_base_line_plot() + geom_point(aes(x = -90, y = 0))
+
+##################################################################################################################################################################################
+
+### process used to put wall on the background based on field and cover foul line past wall
+### this process repeated for all 4 fields
 
 wall_field_ARN <- expand.grid(spray_angle = seq(-pi/4, 0, by = 0.01))
 wall_field_ARN <- bind_rows(wall_field_ARN, wall_field_ARN %>% mutate(spray_angle = -spray_angle))
@@ -16,82 +93,9 @@ cover_line_ARN <- bind_rows(cover_line_ARN, temp)
 cover_line_ARN <- cover_line_ARN %>% mutate(field_x = home_dist * sin(spray_angle),
                                             field_y = home_dist * cos(spray_angle))
 
-
 ##################################################################################################################################################################################
-library(png)
 
-
-field_background <- readPNG("field_background.png")
-field_background_plot <- function() {
-  ggplot() + 
-  annotation_raster(field_background,
-                    xmin = -278, xmax = 278,
-                    ymin = -35, ymax = 469.8) +
-  coord_fixed(
-    xlim = c(-278, 278),
-    ylim = c(-35, 469.8),
-    expand = FALSE
-  ) +
-  theme_void()
-}
-
-field_background_plot() + geom_point(aes(x = x_1b, y = y_1b))
-
-
-
-from_first <- readPNG("from_first.png")
-first_base_line_plot <- function() {
-  ggplot() + 
-  annotation_raster(from_first,
-                    xmin = -105.3, xmax = 15.3,
-                    ymin = 61, ymax = 115.9) +
-  coord_fixed(
-    xlim = c(-105.3, 15.3),
-    ylim = c(61, 115.9),
-    expand = FALSE
-  ) +
-  theme_void()
-}
-
-first_base_line_plot() + geom_point(aes(x = 0, y = 90))
-
-
-
-from_second <- readPNG("from_second.png")
-second_base_line_plot <- function() {
-  ggplot() + 
-  annotation_raster(from_second,
-                    xmin = -15.3, xmax = 105.3,
-                    ymin = 61, ymax = 115.9) +
-  coord_fixed(
-    xlim = c(-15.3, 105.3),
-    ylim = c(61, 115.9),
-    expand = FALSE
-  ) +
-  theme_void()
-}
-
-second_base_line_plot() + geom_point(aes(x = 90, y = 90))
-
-
-
-from_third <- readPNG("from_third.png")
-third_base_line_plot <- function() {
-  ggplot() + 
-  annotation_raster(from_third,
-                    xmin = -105.3, xmax = 15.3,
-                    ymin = -25.9, ymax = 29) +
-  coord_fixed(
-    xlim = c(-105.3, 15.3),
-    ylim = c(-25.9, 29),
-    expand = FALSE
-  ) +
-  theme_void()
-}
-
-third_base_line_plot() + geom_point(aes(x = -90, y = 0))
-
-##################################################################################################################################################################################
+### backgrounds for all the fields
 
 ANI_background <- function() {
   field_background_plot() +
@@ -133,19 +137,7 @@ VAS_background <- function() {
              shape = 23, size = 0.5, color = "#1E6432", fill = "#1E6432")
 }
 
-
-
-
-
-
-
-
-
-human_runner <- readPNG("human_runner.png")
-computer_runner <- readPNG("computer_runner.png")
-
-ggplot(test_play, aes(x = -time_left_ground, y = run_exp)) + 
-       geom_image(aes(image = "human_runner.png"), size = 0.1)
+##################################################################################################################################################################################
 
 
 
