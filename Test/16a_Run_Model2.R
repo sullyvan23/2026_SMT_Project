@@ -345,6 +345,7 @@ for(i in 5:nrow(test_play)) {
   next_time_check <- next_time_check %>% mutate(run_exp = rowSums(across(doubled:advance_3) * across(d_sit_re:a3_sit_re), na.rm = TRUE),
                                                 jerk_now = row_number() / nrow(next_time_check))
 
+  ### if can go back and get home, look to go very slowly forward (because all run expectancies will be the same), otherwise arrange by run expectancy
   if(sum(next_time_check$back_velo) == 0  &  sum(next_time_check$forward_velo) == 0) {
     next_time_check <- next_time_check %>% arrange(abs(runner_basepath_accel-0.01))
   } else {
@@ -356,11 +357,6 @@ for(i in 5:nrow(test_play)) {
   model_play <- bind_rows(model_play, next_time_check[1,])
   print(i/nrow(test_play))
 }
-
-##################################################################################################################################################################
-
-test_play <- plays_share_data %>% filter(game_string == "y1_d071_SQF_ARN", play_per_game == 27) %>% select(-group)
-model_play <- modeled_play_data %>% filter(game_string == "y1_d071_SQF_ARN", play_per_game == 27) %>% select(-group)
 
 ##################################################################################################################################################################
 
@@ -379,6 +375,8 @@ mean(model_play$run_exp - test_play$run_exp)
 sum(test_play$run_exp) / sum(model_play$run_exp)
 
 ##################################################################################################################################################################
+
+### seeing movement against ellipse
 
 ellipse <- expand.grid(runner_basepath_velo = seq(-max_speed, max_speed, by = 0.01),
                        runner_basepath_accel = seq(-max_accel, max_accel, by = 0.01)) %>%
