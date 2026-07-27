@@ -18,11 +18,17 @@ after_model <- bind_rows(model_play[nrow(model_play),],
                                                      play_per_game == model_play$play_per_game[1],
                                                      player_id == model_play$player_id[1],
                                                      timestamp > max(model_play$timestamp)) )
+after_model <- after_model %>% mutate(player_id_br = first(player_id_br))
 
 ### go_back data for balls caught and not by base to tag, go forward otherwie
-after_model <- go_back_final(after_model)
-after_model <- after_model %>% mutate(player_id_br = first(player_id_br),
-                                      basepath = og_basepath_dist + player_id_br - 10)
+after_model <- go_forward_final(after_model)
+after_model <- bind_rows(after_model[1:80,], go_back_final(after_model[81:94,] %>% mutate(og_basepath_dist = 1 - og_basepath_dist,
+                                                                                          across(c(runner_basepath_velo:runner_basepath_accel_2), ~ -.x)) ) %>%
+                                                          mutate(og_basepath_dist = 1 - og_basepath_dist,
+                                                                 across(c(runner_basepath_velo:runner_basepath_accel_2), ~ -.x))
+                        )
+
+after_model <- after_model %>% mutate(basepath = og_basepath_dist + player_id_br - 10)
 
 ### joining together with model positions
 animate_positions <- bind_rows(model_play, after_model[2:nrow(after_model),]) %>% 
@@ -65,6 +71,8 @@ animate_model()
 
 ### save animations
 anim_save("example.gif", animation = last_animation())
+
+anim_save("y1_d071_SQF_ARN_27_score99.78.gif", animation = last_animation())
 
 ###########################################################################################################################################################################################
 
@@ -274,8 +282,8 @@ go_forward_final <- function(input_data) {
                                                 (input_data$runner_basepath_accel[i]^2 / max_accel^2))
 
     ### correcting for if it goes outside of the ellipse (mainly for going back and getting back towards a velocity of 0)
-    if(input_data$og_basepath_dist[i] >= (-input_data$player_id_br[i] + 14)) {
-      input_data$og_basepath_dist[i] <- (-input_data$player_id_br[i] + 14)
+    if(input_data$og_basepath_dist[i] >= (-input_data$player_id_br[1] + 14)) {
+      input_data$og_basepath_dist[i] <- (-input_data$player_id_br[1] + 14)
       input_data$runner_basepath_velo[i] <- 0
     } else {
       while(input_data$ellipse[i] > 1) {
