@@ -20,7 +20,8 @@ after_model <- bind_rows(model_play[nrow(model_play),],
                                                      timestamp > max(model_play$timestamp)) )
 after_model <- after_model %>% mutate(player_id_br = first(player_id_br))
 
-### go_back data for balls caught and not by base to tag, go forward otherwie
+### go_back data for balls caught and not by base to tag, go forward otherwise
+### for example, this one has the runner go forward, but stop at the next base
 after_model <- go_forward_final(after_model)
 after_model <- bind_rows(after_model[1:80,], go_back_final(after_model[81:94,] %>% mutate(og_basepath_dist = 1 - og_basepath_dist,
                                                                                           across(c(runner_basepath_velo:runner_basepath_accel_2), ~ -.x)) ) %>%
