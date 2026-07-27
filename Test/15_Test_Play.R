@@ -1,4 +1,6 @@
 
+### miscellaneous testing of model, do not need to run
+
 ellipse <- expand.grid(runner_basepath_velo = seq(-0.3, 0.3, by = 0.01),
                        runner_basepath_accel = seq(-0.3, 0.3, by = 0.01)) %>%
            mutate(ellipse = (runner_basepath_velo^2 / 0.3^2) +
