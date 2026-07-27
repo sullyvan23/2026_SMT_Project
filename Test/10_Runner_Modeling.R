@@ -1,4 +1,6 @@
 
+### initial modeling tests with all times, idea abandoned, do not need to run
+
 doubled_up_data_sum <- doubled_up_data_sum %>% mutate(key = paste0(game_string, play_per_game, "_", player_id_br)) %>%
                                                relocate(key, .after = player_id_br)
 set.seed(926)
